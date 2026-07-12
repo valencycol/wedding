@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Valency &amp; Alvita — Wedding Invitation</title>
+<meta name="description" content="Together with their families, Valency and Alvita invite you to celebrate their wedding — Saturday, 10 October 2026." />
+<meta name="theme-color" content="#f2e8d6" />
+<meta property="og:title" content="Valency &amp; Alvita — 10 October 2026" />
+<meta property="og:description" content="Together with their families, Valency &amp; Alvita invite you to celebrate their wedding." />
+<meta property="og:image" content="first.png" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>" />
+
+<!-- Preload the six panels used in the animation so nothing pops -->
+<link rel="preload" as="image" href="backside.png" />
+<link rel="preload" as="image" href="middle.png" />
+<link rel="preload" as="image" href="left-flap-outer.png" />
+<link rel="preload" as="image" href="right-flap-outer.png" />
+<link rel="preload" as="image" href="left-flap-inner.png" />
+<link rel="preload" as="image" href="right-flap-inner.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet" />
+
+<style>
+/* ============================================================
+   Valency & Alvita — gatefold invitation
+   Geometry is driven by the artwork itself:
+     closed card  = middle artwork  → 1962 × 2523  (ratio 0.7777)
+     open spread  = full spread     → 3663 × 2523  (ratio 1.4518)
+   ============================================================ */
+:root{
+  --ratio: 0.7777;            /* closed card, width / height          */
+  --spread-ratio: 1.4518;     /* open spread, width / height          */
+
+  --t-flip: 1600ms;           /* set from CONFIG in the script        */
+  --t-open: 2500ms;
+  --t-zoom: 2700ms;
+
+  --zoom-in: 1.35;            /* close-up on the monogram at the start */
+
+  --gold:#b98a2f;
+  --ink:#6b5335;
+  --paper:#ffffff;
+
+  /* Fit the OPEN spread (2 × card width) inside the viewport */
+  --card-w: min(46vw, calc(80vh * var(--ratio)));
+  --card-w: min(46vw, calc(80svh * var(--ratio)));
+  --card-h: calc(var(--card-w) / var(--ratio));
+}
+@media (orientation: portrait){
+  :root{ --zoom-in: 1.6; }
+}
+
+*, *::before, *::after{ box-sizing:border-box; }
+html, body{ height:100%; }
+body{
+  margin:0; overflow:hidden;
+  cursor:pointer; touch-action:none;
+  -webkit-user-select:none; user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  color:var(--ink);
+  background:
+    radial-gradient(120vmax 80vmax at 50% -25%, #fffdf7 0%, rgba(255,253,247,0) 60%),
+    radial-gradient(110vmax 80vmax at 50% 125%, #ecdabf 0%, rgba(236,218,191,0) 55%),
+    linear-gradient(180deg, #faf5eb 0%, #f2e8d6 100%);
+}
+body.started{ cursor:default; }
+
+/* ---------- falling petals (decor, behind the card, never zoomed) ---------- */
+.petals{ position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+.petal{
+  position:absolute; top:-6vh; left:var(--x);
+  width:var(--s); height:calc(var(--s) * 1.2);
+  animation:fall var(--d) linear infinite; animation-delay:var(--delay);
+}
+.petal > i{
+  display:block; width:100%; height:100%;
+  background:radial-gradient(120% 120% at 30% 25%, var(--c2), var(--c1) 70%);
+  border-radius:64% 36% 58% 42% / 52% 48% 64% 36%;
+  opacity:var(--o);
+  box-shadow:inset -2px -4px 8px rgba(90,35,15,.28);
+  animation:sway var(--sd) ease-in-out infinite alternate;
+}
+@keyframes fall{ to{ transform:translate3d(var(--drift), 118vh, 0) rotate(var(--spin)); } }
+@keyframes sway{
+  from{ transform:rotate(-16deg) translateX(-8px); }
+  to  { transform:rotate( 18deg) translateX( 9px); }
+}
+
+/* ---------- user zoom layer (pinch / tap / scroll) ---------- */
+.zoomer{
+  position:fixed; inset:0; z-index:2;
+  display:grid; place-items:center;
+  transform-origin:0 0;
+  will-change:transform;
+}
+
+/* ---------- stage / choreographed camera ---------- */
+.stage{
+  transform:scale(var(--zoom-in));
+  transition:transform var(--t-zoom) cubic-bezier(.22,.75,.2,1);
+}
+body.zoom-out .stage{ transform:scale(1); }
+
+.persp{
+  position:relative;
+  width:var(--card-w); height:var(--card-h);
+  perspective:2400px;
+  animation:breathe 7s ease-in-out infinite;   /* gentle idle float */
+}
+@keyframes breathe{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-0.6%); } }
+
+.ground{
+  position:absolute; left:50%; bottom:-9%;
+  width:112%; height:10%;
+  transform:translateX(-50%);
+  background:radial-gradient(50% 55% at 50% 50%, rgba(74,45,18,.32), rgba(74,45,18,0) 72%);
+  filter:blur(8px);
+  transition:width var(--t-open) cubic-bezier(.3,.8,.3,1);
+}
+body.is-open .ground{ width:220%; }
+
+/* ---------- the card ---------- */
+.card{
+  position:absolute; inset:0;
+  transform-style:preserve-3d; -webkit-transform-style:preserve-3d;
+  transform:rotateY(180deg);                       /* start on the backside */
+  transition:transform var(--t-flip) cubic-bezier(.68,.03,.3,1);
+}
+body.is-flipped .card{ transform:rotateY(360deg); }  /* flip to the gates */
+
+.face-fill{
+  background-color:var(--paper);
+  background-repeat:no-repeat;
+  background-size:100% 100%;
+  background-position:center;
+  box-shadow:0 0 0 1px rgba(120,90,50,.06);
+}
+.mid-back, .mid-front, .face{
+  position:absolute; inset:0;
+  backface-visibility:hidden; -webkit-backface-visibility:hidden;
+}
+.mid-back { transform:rotateY(180deg); }             /* monogram backside   */
+.mid-front{ transform:translateZ(1px); }             /* invitation panel    */
+
+/* fold-crease shading on the middle once the gates are open */
+.mid-front::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  opacity:0; transition:opacity calc(var(--t-open) * 1.15) ease;
+  background:
+    linear-gradient(to right, rgba(64,36,12,.16), rgba(64,36,12,0) 6%),
+    linear-gradient(to left , rgba(64,36,12,.16), rgba(64,36,12,0) 6%);
+}
+body.is-open .mid-front::after{ opacity:1; }
+
+/* ---------- the gates ---------- */
+.flap{
+  position:absolute; top:0; height:100%; width:50%;
+  transform-style:preserve-3d; -webkit-transform-style:preserve-3d;
+  transition:transform var(--t-open) cubic-bezier(.33,.84,.36,1.04); /* slight overshoot = paper flex */
+}
+.flap-l{ left:0;  transform-origin:left center;  transform:translateZ(3px) rotateY(0deg); }
+.flap-r{ right:0; transform-origin:right center; transform:translateZ(3px) rotateY(0deg); }
+body.is-open .flap-l{ transform:translateZ(3px) rotateY(-180deg); }
+body.is-open .flap-r{ transform:translateZ(3px) rotateY( 180deg); }
+body.closing .flap{ transition-timing-function:cubic-bezier(.45,.05,.35,1); } /* no overshoot on close */
+
+.flap .inner{ transform:rotateY(180deg); }
+/* inner panels keep their true proportions so the QR codes stay square */
+.flap .inner.fit{ background-size:contain; }
+
+/* light: inner faces brighten as the gates open, outer faces fall into shadow */
+.face::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  transition:opacity var(--t-open) ease;
+}
+.flap-l .inner::after{ background:linear-gradient(to right, rgba(64,36,12,0) 45%, rgba(64,36,12,.38)); opacity:.7; }
+.flap-r .inner::after{ background:linear-gradient(to left , rgba(64,36,12,0) 45%, rgba(64,36,12,.38)); opacity:.7; }
+body.is-open .flap .inner::after{ opacity:0; }
+.flap-l .outer::after{ background:linear-gradient(to left , rgba(64,36,12,0) 40%, rgba(64,36,12,.42)); opacity:0; }
+.flap-r .outer::after{ background:linear-gradient(to right, rgba(64,36,12,0) 40%, rgba(64,36,12,.42)); opacity:0; }
+body.is-open .flap .outer::after{ opacity:1; }
+
+/* ---------- tappable hotspots over the artwork ----------
+   .art mirrors the exact box the aspect-fitted image occupies,
+   so hotspot percentages are percentages of the source PNG.   */
+.art{
+  position:absolute; inset:0; margin:auto;
+  height:100%;
+}
+.art-l{ aspect-ratio:909 / 2688; }   /* left-flap-inner.png  */
+.art-r{ aspect-ratio:966 / 2694; }   /* right-flap-inner.png */
+.hotspot{
+  position:absolute; display:block;
+  border-radius:14px;
+  pointer-events:none;               /* armed only once the card is open */
+  -webkit-tap-highlight-color:rgba(185,138,47,.18);
+}
+body.done .hotspot{ pointer-events:auto; cursor:pointer; }
+.hotspot:hover, .hotspot:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 2px rgba(185,138,47,.55), 0 0 24px rgba(185,138,47,.30);
+  background:rgba(185,138,47,.06);
+}
+
+/* optional: swap to the flat spread artwork once fully open (CONFIG.flatSpreadWhenOpen) */
+.spread{
+  position:absolute; top:0; left:50%;
+  height:100%; width:calc(var(--card-h) * var(--spread-ratio));
+  transform:translateX(-50%);
+  opacity:0; transition:opacity .7s ease; pointer-events:none;
+}
+body.show-spread .spread{ opacity:1; }
+
+/* ---------- chrome ---------- */
+.veil{
+  position:fixed; inset:0; z-index:50; pointer-events:none;
+  background:linear-gradient(180deg, #faf5eb, #f2e8d6);
+  opacity:1; transition:opacity .9s ease;
+}
+body.ready .veil{ opacity:0; }
+
+/* persistent status line, top center:
+   closed → "Tap to open the card"  ·  open → "Tap or pinch to zoom" */
+.status{
+  position:fixed; top:calc(16px + env(safe-area-inset-top, 0px)); left:50%; z-index:10;
+  transform:translateX(-50%);
+  padding:.6em 1.35em .5em;
+  background:rgba(255,253,247,.6);
+  border:1px solid rgba(107,83,53,.25); border-radius:999px;
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  box-shadow:0 6px 24px -14px rgba(74,45,18,.4);
+  opacity:0; transition:opacity .5s ease;
+  pointer-events:none; white-space:nowrap;
+}
+body.ready .status{ opacity:1; }
+body.ui-busy .status{ opacity:0; }
+.status span{
+  display:block;
+  font-size:clamp(12px, 1.2vmin + 7px, 16px);
+  letter-spacing:.3em; text-indent:.3em; text-transform:uppercase;
+  color:var(--gold);
+}
+.status span.pulse{ animation:pulse 2.8s ease-in-out infinite; }
+@keyframes pulse{ 0%,100%{ opacity:.9; } 50%{ opacity:.35; } }
+
+/* Open / Close — centered at the bottom */
+.controls{
+  position:fixed; left:50%; bottom:calc(18px + env(safe-area-inset-bottom, 0px)); z-index:10;
+  transform:translateX(-50%);
+  display:flex; gap:4px; padding:6px;
+  background:rgba(255,253,247,.6);
+  border:1px solid rgba(107,83,53,.28); border-radius:999px;
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  box-shadow:0 6px 24px -12px rgba(74,45,18,.35);
+  opacity:0; pointer-events:none; transition:opacity .6s ease;
+}
+body.ready .controls{ opacity:1; pointer-events:auto; }
+.controls button{
+  font:inherit; font-size:13px;
+  letter-spacing:.18em; text-indent:.18em; text-transform:uppercase;
+  color:var(--ink); background:transparent;
+  border:0; border-radius:999px;
+  padding:.6em 1.3em .5em; cursor:pointer;
+  transition:background .25s ease, opacity .25s ease;
+  touch-action:manipulation;
+}
+.controls button:hover:not(:disabled){ background:rgba(185,138,47,.16); }
+.controls button:disabled{ opacity:.32; cursor:default; }
+.controls button:focus-visible{ outline:none; box-shadow:0 0 0 2px var(--gold); }
+
+body.clean .status, body.clean .controls{ display:none !important; }
+
+.sr-only{
+  position:absolute; width:1px; height:1px; margin:-1px;
+  clip-path:inset(50%); overflow:hidden; white-space:nowrap;
+}
+
+@media (prefers-reduced-motion: reduce){
+  :root{ --t-flip:80ms; --t-open:80ms; --t-zoom:80ms; }
+  .petals{ display:none; }
+  .persp{ animation:none; }
+  .status span.pulse{ animation:none; }
+}
+</style>
+</head>
+<body>
+
+<p class="sr-only">
+  Together with their families, Valency (son of Oscar and Sharmila Colaco) and
+  Alvita (daughter of Anthony and Ancida Gomes) invite you to celebrate their
+  wedding on Saturday, 10 October 2026. Blessings at 2:00 PM and nuptials at
+  4:00 PM at St. Joseph&rsquo;s Church, near Juhu Bus Depot, Vile Parle West.
+  Reception from 7:30 PM at Galaxy Banquets, 3rd Floor, Mehra Compound,
+  Telephone Exchange Road, Saki Naka. RSVP before October 1st to Sharmila on
+  WhatsApp, 83697 11456. With love, no boxed gifts or bouquets please.
+</p>
+
+<div class="petals" aria-hidden="true"></div>
+
+<div class="zoomer" id="zoomer">
+  <main class="stage">
+    <div class="persp">
+      <div class="ground" aria-hidden="true"></div>
+
+      <div class="card" role="img" aria-label="Gatefold wedding invitation for Valency and Alvita">
+        <!-- middle sheet: invitation on the front, monogram on the back -->
+        <div class="face-fill mid-back"  style="background-image:url('backside.png')"></div>
+        <div class="face-fill mid-front" style="background-image:url('middle.png')"></div>
+
+        <!-- left gate: church facade outside, wedding timeline inside -->
+        <div class="flap flap-l">
+          <div class="face face-fill outer" style="background-image:url('left-flap-outer.png')"></div>
+          <div class="face face-fill inner fit" style="background-image:url('left-flap-inner.png')">
+            <div class="art art-l">
+              <a class="hotspot" href="https://wa.me/918369711456?text=Hello%20Sharmila%2C%20RSVP%20for%20Valency%20and%20Alvita%27s%20wedding%20on%2010%20October%3A%20"
+                 target="_blank" rel="noopener"
+                 title="RSVP to Sharmila on WhatsApp"
+                 aria-label="RSVP to Sharmila on WhatsApp"
+                 style="left:8%; top:70%; width:84%; height:17%;"></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- right gate: church facade outside, directions & QR codes inside -->
+        <div class="flap flap-r">
+          <div class="face face-fill outer" style="background-image:url('right-flap-outer.png')"></div>
+          <div class="face face-fill inner fit" style="background-image:url('right-flap-inner.png')">
+            <div class="art art-r">
+              <a class="hotspot" href="https://maps.app.goo.gl/Hzrd6hJ28vYLuKH36"
+                 target="_blank" rel="noopener"
+                 title="Directions to St. Joseph&rsquo;s Church"
+                 aria-label="Directions to St. Joseph&rsquo;s Church, Juhu, Vile Parle West"
+                 style="left:8%; top:12.5%; width:84%; height:34%;"></a>
+              <a class="hotspot" href="https://maps.app.goo.gl/DYg9eJXNf3GmCWth8"
+                 target="_blank" rel="noopener"
+                 title="Directions to Galaxy Banquets"
+                 aria-label="Directions to Galaxy Banquets, Saki Naka"
+                 style="left:8%; top:61%; width:84%; height:36%;"></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- optional flat artwork of the full open spread -->
+      <div class="spread face-fill" style="background-image:url('last.png')" aria-hidden="true"></div>
+    </div>
+  </main>
+</div>
+
+<div class="veil" aria-hidden="true"></div>
+
+<div class="status" aria-live="polite"><span id="statusText" class="pulse">Tap to open the card</span></div>
+
+<nav class="controls" aria-label="Invitation controls">
+  <button id="btnOpen"  type="button">Open</button>
+  <button id="btnMute" type="button" aria-pressed="false">Mute Audio</button>
+  <button id="btnClose" type="button" disabled>Close</button>
+</nav>
+
+<audio id="bgm" src="music.mp3" loop preload="auto"></audio>
+
+<script>
+(() => {
+  /* ================= EDIT ME =================
+     All pacing lives here (milliseconds). URL params:
+       ?autoplay=1   start by itself (for screen recording)
+       ?clean=1      hide all on-screen UI (for recording)
+       ?loop=1       open → hold → close → repeat forever
+       ?petals=0     turn off the falling petals
+  ============================================ */
+  const qs = new URLSearchParams(location.search);
+  const CONFIG = {
+    autoplay: qs.get('autoplay') === '1',
+    loop:     qs.get('loop')     === '1',
+    clean:    qs.get('clean')    === '1',
+    petals:   qs.get('petals')   !== '0',
+
+    /* true  → crossfade to the flat spread artwork once fully open (exact
+               designed spread, but its crop is a little tighter, so panels
+               shift slightly, and it covers the tappable hotspots)
+       false → keep the live 3-panel composite (default) */
+    flatSpreadWhenOpen: false,
+
+    maxZoom: 4,          // pinch / tap / scroll zoom ceiling
+    tapZoom: 2.4,        // how far a tap zooms in when the card is open
+
+    t: {
+      introHold:  650,   // hold on the monogram before the flip
+      flip:      1600,   // backside → closed gates
+      facadeHold:1250,   // admire the church before the gates part
+      open:      2500,   // gates swing open
+      zoom:      2700,   // camera pull-back while opening
+      openHold:  4500,   // (loop mode) how long the open card stays
+      backHold:   900    // (loop mode) pause on the backside between plays
+    },
+    closeT: { open: 1500, flip: 1100, zoom: 1500 }  // closing is brisker
+  };
+
+  const root = document.documentElement;
+  const body = document.body;
+  const $ = s => document.querySelector(s);
+  const btnOpen = $('#btnOpen'), btnClose = $('#btnClose');
+  const statusText = $('#statusText');
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const setDur = (open, flip, zoom) => {
+    root.style.setProperty('--t-open', open + 'ms');
+    root.style.setProperty('--t-flip', flip + 'ms');
+    root.style.setProperty('--t-zoom', zoom + 'ms');
+  };
+  setDur(CONFIG.t.open, CONFIG.t.flip, CONFIG.t.zoom);
+  if (CONFIG.clean) body.classList.add('clean');
+
+  const bgm = document.getElementById('bgm');
+  bgm.volume = 0;
+  function fadeBgm(target, ms = 1800){
+    const from = bgm.volume, t0 = performance.now();
+    if (target > 0 && bgm.paused) bgm.play().catch(() => {});
+    (function step(t){
+      const k = Math.min(1, (t - t0) / ms);
+      bgm.volume = from + (target - from) * k;
+      if (k < 1) requestAnimationFrame(step);
+      else if (target === 0) bgm.pause();
+    })(t0);
+  }
+
+  let busy = false, isOpen = false;
+
+  function refreshUI(){
+    btnOpen.disabled  = busy || isOpen;
+    btnClose.disabled = busy || !isOpen;
+    body.classList.toggle('ui-busy', busy);
+    if (!busy){
+      statusText.textContent = isOpen ? 'Tap or pinch to zoom' : 'Tap to open the card';
+      statusText.classList.toggle('pulse', !isOpen);
+    }
+  }
+
+  /* ---------- choreography ---------- */
+  async function openCard(){
+    if (busy || isOpen || !body.classList.contains('ready')) return;
+    busy = true; refreshUI();
+    resetZoom(true);
+    body.classList.add('started');
+    if (!musicMuted) fadeBgm(0.55);
+    await sleep(CONFIG.t.introHold);
+
+    body.classList.add('is-flipped');                    // monogram flips away
+    await sleep(CONFIG.t.flip + CONFIG.t.facadeHold);
+
+    body.classList.add('is-open', 'zoom-out');           // gates part, camera pulls back
+    await sleep(CONFIG.t.open + 200);
+
+    if (CONFIG.flatSpreadWhenOpen) body.classList.add('show-spread');
+    body.classList.add('done');
+    isOpen = true;
+    busy = false; refreshUI();
+    if (CONFIG.loop) loopNext();
+  }
+
+  async function closeCard(){
+    if (busy || !isOpen) return;
+    busy = true; refreshUI();
+    resetZoom(true);
+    body.classList.remove('done', 'show-spread');
+    fadeBgm(0);
+    body.classList.add('closing');
+    setDur(CONFIG.closeT.open, CONFIG.closeT.flip, CONFIG.closeT.zoom);
+    await sleep(120);
+
+    body.classList.remove('is-open', 'zoom-out');        // gates close, camera moves in
+    await sleep(CONFIG.closeT.open + 180);
+
+    body.classList.remove('is-flipped');                 // flip back to the monogram
+    await sleep(CONFIG.closeT.flip + 150);
+
+    setDur(CONFIG.t.open, CONFIG.t.flip, CONFIG.t.zoom);
+    body.classList.remove('closing');
+    isOpen = false;
+    busy = false; refreshUI();
+  }
+
+  async function loopNext(){
+    await sleep(CONFIG.t.openHold);
+    await closeCard();
+    await sleep(CONFIG.t.backHold);
+    openCard();
+  }
+
+  /* ---------- controls & keyboard ---------- */
+  btnOpen.addEventListener('click', openCard);
+  btnClose.addEventListener('click', closeCard);
+  addEventListener('keydown', e => {
+    if (e.key === ' ' || e.key === 'Enter'){
+      if (!isOpen){ e.preventDefault(); openCard(); }
+    } else if (e.key === 'Escape' || e.key.toLowerCase() === 'c'){ closeCard(); }
+  });
+  const btnMute = $('#btnMute');
+  let musicMuted = false;
+  btnMute.addEventListener('click', () => {
+    musicMuted = !musicMuted;
+    btnMute.textContent = musicMuted ? 'Unmute Audio' : 'Mute Audio';
+    btnMute.setAttribute('aria-pressed', musicMuted);
+    if (musicMuted) fadeBgm(0, 900);                       // ease out over 0.9s
+    else if (isOpen || busy) fadeBgm(0.55, 900);           // ease back in
+  });
+
+  /* ---------- pinch / pan / tap / scroll zoom ---------- */
+  const zoomer = $('#zoomer');
+  const Z = { s: 1, tx: 0, ty: 0 };
+  const clampS = s => Math.min(CONFIG.maxZoom, Math.max(1, s));
+
+  function clampPan(){
+    if (Z.s <= 1.001){ Z.tx = 0; Z.ty = 0; return; }
+    const w = innerWidth, h = innerHeight;
+    Z.tx = Math.min(0, Math.max(w * (1 - Z.s), Z.tx));
+    Z.ty = Math.min(0, Math.max(h * (1 - Z.s), Z.ty));
+  }
+  function applyZ(animated){
+    zoomer.style.transition = animated ? 'transform .5s cubic-bezier(.22,.75,.2,1)' : 'none';
+    zoomer.style.transform  = `translate(${Z.tx}px, ${Z.ty}px) scale(${Z.s})`;
+  }
+  function zoomAt(px, py, factor, animated){
+    const s2 = clampS(Z.s * factor);
+    const k  = s2 / Z.s;
+    Z.tx = px - k * (px - Z.tx);
+    Z.ty = py - k * (py - Z.ty);
+    Z.s  = s2;
+    clampPan(); applyZ(animated);
+  }
+  function resetZoom(animated){
+    Z.s = 1; Z.tx = 0; Z.ty = 0;
+    applyZ(animated);
+  }
+
+  const pts = new Map();
+  let pinch = null, drag = null;
+
+  addEventListener('pointerdown', e => {
+    if (e.target.closest('.controls, a.hotspot')) return;   // let buttons & links behave natively
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size === 1){
+      drag = { x0: e.clientX, y0: e.clientY, t0: performance.now(),
+               tx0: Z.tx, ty0: Z.ty, maxP: 1, moved: 0 };
+    } else if (pts.size === 2){
+      if (drag) drag.maxP = 2;
+      const [a, b] = [...pts.values()];
+      pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y),
+                mx0: (a.x + b.x) / 2, my0: (a.y + b.y) / 2,
+                s0: Z.s, tx0: Z.tx, ty0: Z.ty };
+    }
+  });
+
+  addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size === 2 && pinch){
+      const [a, b] = [...pts.values()];
+      const d  = Math.hypot(a.x - b.x, a.y - b.y);
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      const s2 = clampS(pinch.s0 * (d / pinch.d0));
+      const k  = s2 / pinch.s0;
+      Z.s  = s2;
+      Z.tx = mx - k * (pinch.mx0 - pinch.tx0);
+      Z.ty = my - k * (pinch.my0 - pinch.ty0);
+      clampPan(); applyZ(false);
+    } else if (pts.size === 1 && drag){
+      const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+      drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));
+      if (Z.s > 1.001){                                   // one-finger pan when zoomed
+        Z.tx = drag.tx0 + dx; Z.ty = drag.ty0 + dy;
+        clampPan(); applyZ(false);
+      }
+    }
+  });
+
+  function endPointer(e){
+    if (!pts.has(e.pointerId)) return;
+    pts.delete(e.pointerId);
+    if (pts.size < 2) pinch = null;
+    if (pts.size === 1){                                  // re-seed pan from the remaining finger
+      const [r] = [...pts.values()];
+      drag = { x0: r.x, y0: r.y, t0: performance.now(),
+               tx0: Z.tx, ty0: Z.ty, maxP: 2, moved: 99 };
+    }
+    if (pts.size === 0 && drag){
+      const dt = performance.now() - drag.t0;
+      const tapped = drag.maxP === 1 && drag.moved < 10 && dt < 400;
+      if (tapped) handleTap(e.clientX, e.clientY);
+      drag = null;
+    }
+  }
+  addEventListener('pointerup', endPointer);
+  addEventListener('pointercancel', endPointer);
+
+  /* closed → a tap opens the card; open → a tap zooms in / back out */
+  function handleTap(x, y){
+    if (busy) return;
+    if (!isOpen){ openCard(); return; }
+    if (Z.s > 1.05) resetZoom(true);
+    else zoomAt(x, y, CONFIG.tapZoom / Z.s, true);
+  }
+
+  addEventListener('wheel', e => {                        // trackpad pinch + mouse wheel
+    e.preventDefault();
+    const f = Math.exp(-e.deltaY * (e.ctrlKey ? 0.0035 : 0.0012));
+    zoomAt(e.clientX, e.clientY, f, false);
+  }, { passive: false });
+
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(t =>
+    document.addEventListener(t, e => e.preventDefault()));   // stop Safari page zoom
+  addEventListener('resize', () => { clampPan(); applyZ(false); });
+
+  /* ---------- petals ---------- */
+  if (CONFIG.petals && !matchMedia('(prefers-reduced-motion: reduce)').matches){
+    const host = $('.petals');
+    const palette = [
+      ['#8a2333', '#b34a5a'],   // burgundy
+      ['#b9541c', '#e07a36'],   // burnt orange
+      ['#c99433', '#e7bc63'],   // gold
+      ['#efe2cd', '#fbf3e4']    // cream
+    ];
+    for (let k = 0; k < 16; k++){
+      const p = document.createElement('span'); p.className = 'petal';
+      const i = document.createElement('i');    p.appendChild(i);
+      const [c1, c2] = palette[k % palette.length];
+      p.style.setProperty('--x',     (Math.random() * 100).toFixed(1) + 'vw');
+      p.style.setProperty('--s',     (10 + Math.random() * 14).toFixed(1) + 'px');
+      p.style.setProperty('--d',     (9 + Math.random() * 10).toFixed(2) + 's');
+      p.style.setProperty('--delay', (-Math.random() * 18).toFixed(2) + 's');
+      p.style.setProperty('--drift', (Math.random() * 16 - 8).toFixed(1) + 'vw');
+      p.style.setProperty('--spin',  ((Math.random() > .5 ? 1 : -1) * (220 + Math.random() * 260)).toFixed(0) + 'deg');
+      p.style.setProperty('--sd',    (2.4 + Math.random() * 2.4).toFixed(2) + 's');
+      i.style.setProperty('--c1', c1);
+      i.style.setProperty('--c2', c2);
+      i.style.setProperty('--o',  (0.35 + Math.random() * 0.3).toFixed(2));
+      host.appendChild(p);
+    }
+  }
+
+  /* ---------- preload, then lift the veil ---------- */
+  const IMGS = ['backside.png','middle.png','left-flap-outer.png','right-flap-outer.png',
+                'left-flap-inner.png','right-flap-inner.png'];
+  if (CONFIG.flatSpreadWhenOpen) IMGS.push('last.png');
+  Promise.all(IMGS.map(src => new Promise(res => {
+    const im = new Image(); im.onload = im.onerror = res; im.src = src;
+  }))).then(() => {
+    body.classList.add('ready');
+    refreshUI();
+    if (CONFIG.autoplay) setTimeout(openCard, 900);
+  });
+
+  /* console / integration API */
+  window.invite = { open: openCard, close: closeCard, resetZoom: () => resetZoom(true) };
+})();
+</script>
+</body>
+</html>

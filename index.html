@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Alvita &amp; Valency — 10 October 2026</title>
+<meta name="description" content="One celebration, two invitations. Choose whether to open Alvita's or Valency's wedding invitation." />
+<meta name="theme-color" content="#f2e8d6" />
+<meta property="og:title" content="Alvita &amp; Valency — 10 October 2026" />
+<meta property="og:description" content="One celebration, two invitations. Whose will you open?" />
+<meta property="og:url" content="https://alvitaandvalency.com/" />
+<meta property="og:image" content="https://alvitaandvalency.com/alvita/first.png" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Great+Vibes&display=swap" rel="stylesheet" />
+
+<style>
+:root{
+  --gold:#b98a2f;
+  --gold-soft:rgba(185,138,47,.35);
+  --ink:#6b5335;
+  --paper:rgba(255,253,247,.66);
+}
+*, *::before, *::after{ box-sizing:border-box; }
+html, body{ min-height:100%; }
+body{
+  margin:0;
+  font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  color:var(--ink);
+  background:
+    radial-gradient(120vmax 80vmax at 50% -25%, #fffdf7 0%, rgba(255,253,247,0) 60%),
+    radial-gradient(110vmax 80vmax at 50% 125%, #ecdabf 0%, rgba(236,218,191,0) 55%),
+    linear-gradient(180deg, #faf5eb 0%, #f2e8d6 100%);
+  background-attachment:fixed;
+  display:grid; place-items:center;
+  padding:6vh 20px;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* ---------- falling petals ---------- */
+.petals{ position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+.petal{
+  position:absolute; top:-6vh; left:var(--x);
+  width:var(--s); height:calc(var(--s) * 1.2);
+  animation:fall var(--d) linear infinite; animation-delay:var(--delay);
+}
+.petal > i{
+  display:block; width:100%; height:100%;
+  background:radial-gradient(120% 120% at 30% 25%, var(--c2), var(--c1) 70%);
+  border-radius:64% 36% 58% 42% / 52% 48% 64% 36%;
+  opacity:var(--o);
+  box-shadow:inset -2px -4px 8px rgba(90,35,15,.28);
+  animation:sway var(--sd) ease-in-out infinite alternate;
+}
+@keyframes fall{ to{ transform:translate3d(var(--drift), 118vh, 0) rotate(var(--spin)); } }
+@keyframes sway{
+  from{ transform:rotate(-16deg) translateX(-8px); }
+  to  { transform:rotate( 18deg) translateX( 9px); }
+}
+
+/* ---------- content ---------- */
+.wrap{ position:relative; z-index:2; text-align:center; max-width:900px; }
+
+.eyebrow{
+  margin:0 0 6px;
+  font-size:clamp(12px, 1.2vmin + 7px, 17px);
+  letter-spacing:.42em; text-indent:.42em; text-transform:uppercase;
+  color:var(--gold);
+}
+.names{
+  margin:0;
+  font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  font-weight:600;
+  font-size:clamp(40px, 7.5vw, 76px);
+  line-height:1.12;
+  letter-spacing:.02em;
+  color:var(--gold);
+  text-shadow:0 2px 14px rgba(185,138,47,.18);
+}
+.names .amp{ font-style:italic; font-weight:500; font-size:.7em; opacity:.85; padding:0 .1em; }
+.date{
+  margin:14px 0 0;
+  font-style:italic;
+  font-size:clamp(17px, 1.6vmin + 10px, 24px);
+  letter-spacing:.06em;
+  opacity:.9;
+}
+
+
+.ask{
+  margin:34px 0 36px;
+  font-style:italic; font-size:clamp(18px, 2vmin + 10px, 26px);
+}
+
+.choices{
+  display:flex; align-items:stretch; justify-content:center;
+  gap:20px; flex-wrap:wrap;
+}
+.tile{
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  width:min(300px, 86vw);
+  padding:30px 24px 24px;
+  background:var(--paper);
+  border:1px solid rgba(107,83,53,.25); border-radius:22px;
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  box-shadow:0 14px 40px -24px rgba(74,45,18,.45);
+  text-decoration:none; color:var(--ink);
+  transition:transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+}
+.tile:hover, .tile:focus-visible{
+  transform:translateY(-6px);
+  border-color:var(--gold-soft);
+  box-shadow:0 24px 54px -24px rgba(74,45,18,.55), 0 0 0 2px var(--gold-soft);
+  outline:none;
+}
+.medallion{
+  width:78px; height:78px; border-radius:50%;
+  display:grid; place-items:center;
+  font-family:'Great Vibes', cursive; font-size:46px; color:var(--gold);
+  background:radial-gradient(120% 120% at 30% 25%, #fffdf7, #f4e8d2);
+  box-shadow:inset 0 0 0 1px rgba(185,138,47,.45), inset 0 0 0 5px rgba(255,253,247,.9), inset 0 0 0 6px rgba(185,138,47,.35);
+  padding-top:6px;
+}
+.who{ font-size:27px; font-weight:600; }
+.sub{
+  font-size:12.5px; letter-spacing:.26em; text-indent:.26em; text-transform:uppercase;
+  opacity:.75;
+}
+.go{
+  margin-top:10px;
+  font-size:13px; letter-spacing:.22em; text-indent:.22em; text-transform:uppercase;
+  color:var(--gold);
+  transition:letter-spacing .3s ease;
+}
+.tile:hover .go{ letter-spacing:.3em; }
+
+
+.foot{
+  margin:40px 0 0;
+  font-style:italic; font-size:15px; opacity:.75;
+}
+
+/* gentle entrance */
+.wrap > *, .choices .tile{
+  animation:rise .9s cubic-bezier(.22,.75,.2,1) both;
+}
+.names{ animation-delay:.05s; } .date{ animation-delay:.15s; }
+.ask{ animation-delay:.25s; }
+.choices .tile:first-child{ animation-delay:.35s; }
+.choices .tile:last-child{ animation-delay:.45s; }
+.foot{ animation-delay:.6s; }
+@keyframes rise{
+  from{ opacity:0; transform:translateY(14px); }
+  to  { opacity:1; transform:translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .petals{ display:none; }
+  .wrap > *, .choices .tile{ animation:none; }
+  .tile{ transition:none; }
+}
+</style>
+</head>
+<body>
+
+<div class="petals" aria-hidden="true"></div>
+
+<main class="wrap">
+  <p class="eyebrow">Welcome to the Wedding of</p>
+  <h1 class="names">Alvita <span class="amp">&amp;</span> Valency</h1>
+  <p class="date">Saturday, 10 October 2026 · Mumbai</p>
+
+
+  <p class="ask">One celebration, two invitations — whose will you open?</p>
+
+  <nav class="choices" aria-label="Choose an invitation">
+    <a class="tile" href="alvita/">
+      <span class="medallion" aria-hidden="true">A</span>
+      <span class="who">Alvita&rsquo;s</span>
+      <span class="sub">The bride&rsquo;s invitation</span>
+      <span class="go">Open ›</span>
+    </a>
+    <a class="tile" href="valency/">
+      <span class="medallion" aria-hidden="true">V</span>
+      <span class="who">Valency&rsquo;s</span>
+      <span class="sub">The groom&rsquo;s invitation</span>
+      <span class="go">Open ›</span>
+    </a>
+  </nav>
+
+  <p class="foot">With love, from both of us</p>
+</main>
+
+<script>
+(() => {
+  // file:// has no web server, so "alvita/" would show a folder listing;
+  // point straight at index.html when previewing from disk. Web servers and
+  // GitHub Pages serve the folder's index.html automatically, keeping the
+  // clean /alvita and /valency URLs in production.
+  if (location.protocol === 'file:'){
+    document.querySelectorAll('.choices a').forEach(a => a.href += 'index.html');
+  }
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const host = document.querySelector('.petals');
+  const palette = [
+    ['#8a2333', '#b34a5a'],   // burgundy
+    ['#b9541c', '#e07a36'],   // burnt orange
+    ['#c99433', '#e7bc63'],   // gold
+    ['#efe2cd', '#fbf3e4']    // cream
+  ];
+  for (let k = 0; k < 14; k++){
+    const p = document.createElement('span'); p.className = 'petal';
+    const i = document.createElement('i');    p.appendChild(i);
+    const [c1, c2] = palette[k % palette.length];
+    p.style.setProperty('--x',     (Math.random() * 100).toFixed(1) + 'vw');
+    p.style.setProperty('--s',     (10 + Math.random() * 14).toFixed(1) + 'px');
+    p.style.setProperty('--d',     (9 + Math.random() * 10).toFixed(2) + 's');
+    p.style.setProperty('--delay', (-Math.random() * 18).toFixed(2) + 's');
+    p.style.setProperty('--drift', (Math.random() * 16 - 8).toFixed(1) + 'vw');
+    p.style.setProperty('--spin',  ((Math.random() > .5 ? 1 : -1) * (220 + Math.random() * 260)).toFixed(0) + 'deg');
+    p.style.setProperty('--sd',    (2.4 + Math.random() * 2.4).toFixed(2) + 's');
+    i.style.setProperty('--c1', c1);
+    i.style.setProperty('--c2', c2);
+    i.style.setProperty('--o',  (0.35 + Math.random() * 0.3).toFixed(2));
+    host.appendChild(p);
+  }
+})();
+</script>
+</body>
+</html>
