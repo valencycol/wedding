@@ -3,21 +3,54 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Alvita &amp; Valency — 10 October 2026</title>
+<title>Alvita and Valency — 10 October 2026</title>
 <meta name="description" content="One celebration, two invitations. Choose whether to open Alvita's or Valency's wedding invitation." />
 <meta name="theme-color" content="#f2e8d6" />
-<meta property="og:title" content="Alvita &amp; Valency — 10 October 2026" />
-<meta property="og:description" content="One celebration, two invitations. Whose will you open?" />
+<meta property="og:title" content="Alvita and Valency — 10 October 2026" />
+<meta property="og:description" content="One celebration, two invitations!" />
 <meta property="og:url" content="https://alvitaandvalency.com/" />
 <meta property="og:image" content="https://alvitaandvalency.com/alvita/first.png" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>" />
 
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Great+Vibes&display=swap" rel="stylesheet" />
+<link rel="preload" href="assets/fonts/cormorant-garamond-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="assets/fonts/cormorant-garamond-latin-wght-italic.woff2" as="font" type="font/woff2" crossorigin />
 
 <style>
+/* Self-hosted fonts (OFL-1.1): Cormorant Garamond (variable, wght 300–700,
+   normal + italic) and Great Vibes. Same family names as before. */
+@font-face{
+  font-family:'Cormorant Garamond'; font-style:normal; font-display:swap; font-weight:300 700;
+  src:url('assets/fonts/cormorant-garamond-latin-ext-wght-normal.woff2') format('woff2-variations');
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face{
+  font-family:'Cormorant Garamond'; font-style:normal; font-display:swap; font-weight:300 700;
+  src:url('assets/fonts/cormorant-garamond-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family:'Cormorant Garamond'; font-style:italic; font-display:swap; font-weight:300 700;
+  src:url('assets/fonts/cormorant-garamond-latin-ext-wght-italic.woff2') format('woff2-variations');
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face{
+  font-family:'Cormorant Garamond'; font-style:italic; font-display:swap; font-weight:300 700;
+  src:url('assets/fonts/cormorant-garamond-latin-wght-italic.woff2') format('woff2-variations');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family:'Great Vibes'; font-style:normal; font-display:swap; font-weight:400;
+  src:url('assets/fonts/great-vibes-latin-ext-400-normal.woff2') format('woff2');
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face{
+  font-family:'Great Vibes'; font-style:normal; font-display:swap; font-weight:400;
+  src:url('assets/fonts/great-vibes-latin-400-normal.woff2') format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
 :root{
+  color-scheme:only light; /* opt out of browser forced-dark filters (Aloha, Chrome Auto Dark) */
   --gold:#b98a2f;
   --gold-soft:rgba(185,138,47,.35);
   --ink:#6b5335;
@@ -169,11 +202,11 @@ body{
 
 <main class="wrap">
   <p class="eyebrow">Welcome to the Wedding of</p>
-  <h1 class="names">Alvita <span class="amp">&amp;</span> Valency</h1>
+  <h1 class="names">Alvita <span class="amp">and</span> Valency</h1>
   <p class="date">Saturday, 10 October 2026 · Mumbai</p>
 
 
-  <p class="ask">One celebration, two invitations — whose will you open?</p>
+  <p class="ask">One celebration, two invitations!</p>
 
   <nav class="choices" aria-label="Choose an invitation">
     <a class="tile" href="alvita/">
