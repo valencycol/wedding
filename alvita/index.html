@@ -381,7 +381,7 @@ body.ready .controls{ opacity:1; pointer-events:auto; }
 .taps em{ font-style:italic; color:#4d3b24; }
 
 .sheet .go{
-  display:block; width:min(100%, 270px); min-height:48px;
+  display:flex; align-items:center; justify-content:center; text-decoration:none; width:min(100%, 270px); min-height:48px;
   margin:1.5em auto 0; font:inherit; font-size:13px;
   letter-spacing:.2em; text-indent:.2em; text-transform:uppercase;
   color:#fffdf7; background:linear-gradient(180deg, #c9993c, #a9781f);
@@ -393,6 +393,75 @@ body.ready .controls{ opacity:1; pointer-events:auto; }
 .sheet .go:hover{ filter:brightness(1.07); box-shadow:0 16px 30px -14px rgba(120,85,20,1); }
 .sheet .go:active{ transform:translateY(1px); }
 .sheet .go:focus-visible{ outline:none; box-shadow:0 0 0 2px #fffdf7, 0 0 0 4px var(--gold); }
+
+/* the RSVP composer */
+.compose{
+  display:block; width:100%; margin:1.1em 0 0;
+  font:inherit; font-size:16px;                 /* 16px keeps iOS from zooming on focus */
+  line-height:1.55; color:#4d3b24; text-align:left;
+  background:rgba(255,255,255,.92);
+  border:1px solid rgba(185,138,47,.42); border-radius:3px;
+  padding:.7em .8em; resize:vertical; min-height:5.8em;
+  box-shadow:inset 0 1px 3px rgba(120,90,50,.10);
+  transition:border-color .2s ease, box-shadow .2s ease;
+}
+.compose:focus{
+  outline:none; border-color:rgba(185,138,47,.85);
+  box-shadow:inset 0 1px 3px rgba(120,90,50,.10), 0 0 0 3px rgba(185,138,47,.18);
+}
+.compose::placeholder{ color:rgba(107,83,53,.42); }
+.notice{
+  margin:1.05em auto 0; padding:.7em .9em;
+  background:rgba(185,138,47,.08);
+  border:1px solid rgba(185,138,47,.26); border-radius:3px;
+  font-size:clamp(13px, 1vmin + 9.5px, 15px); line-height:1.5; color:var(--ink);
+}
+.notice b{
+  display:block; margin-top:.15em; white-space:nowrap;
+  font-weight:500; font-size:1.2em; letter-spacing:.04em; color:#4d3b24;
+}
+
+/* two stacked choices */
+.actions{ display:flex; flex-direction:column; align-items:center; gap:.6em; margin-top:1.5em; }
+.actions .go{ margin-top:0; }
+.go.ghost{
+  color:var(--ink); background:none; box-shadow:none;
+  border:1px solid rgba(185,138,47,.5);
+}
+.go.ghost:hover{ background:rgba(185,138,47,.12); filter:none; box-shadow:none; }
+
+/* the one-second handoff: chevrons chase right while a hairline fills */
+.sheet .num{
+  display:block; margin-top:.4em; white-space:nowrap;
+  font-size:1.3em; letter-spacing:.05em; color:#4d3b24;
+}
+.chevs{
+  display:flex; justify-content:center; gap:.1em;
+  margin:1.35em 0 0; color:var(--gold); line-height:1;
+  font-size:clamp(21px, 2.2vmin + 13px, 29px);
+}
+.chevs b{ font-weight:400; opacity:.16; }
+.scrim.on .chevs b{ animation:chev 1s ease-in-out infinite; }
+/* the delays must out-specify the `animation` shorthand above, which resets them */
+.scrim.on .chevs b:nth-child(2){ animation-delay:.08s; }
+.scrim.on .chevs b:nth-child(3){ animation-delay:.16s; }
+.scrim.on .chevs b:nth-child(4){ animation-delay:.24s; }
+.scrim.on .chevs b:nth-child(5){ animation-delay:.32s; }
+.scrim.on .chevs b:nth-child(6){ animation-delay:.40s; }
+@keyframes chev{
+  0%, 62%, 100%{ opacity:.16; transform:translateX(0); }
+  30%          { opacity:1;   transform:translateX(3px); }
+}
+.progress{
+  position:relative; width:62%; height:2px; margin:1.1em auto 0;
+  border-radius:2px; overflow:hidden; background:rgba(185,138,47,.2);
+}
+.progress i{
+  position:absolute; inset:0; transform:scaleX(0); transform-origin:left;
+  background:linear-gradient(90deg, #c9993c, #a9781f);
+}
+.scrim.on .progress i{ animation:fillbar 1s linear forwards; }
+@keyframes fillbar{ to{ transform:scaleX(1); } }
 
 /* small phones & landscape slivers */
 @media (max-width: 400px), (max-height: 560px){
@@ -412,6 +481,10 @@ body.ready .controls{ opacity:1; pointer-events:auto; }
   .taps{ margin-top:.75em; }
   .taps li{ padding:.4em 0; }
   .sheet .go{ margin-top:1em; min-height:44px; }
+  .compose{ min-height:2.6em; margin-top:.7em; }
+  .notice{ margin-top:.7em; padding:.5em .75em; }
+  #waCompose p.body{ display:none; }        /* the textarea speaks for itself down here */
+  .actions{ margin-top:1em; gap:.45em; }
   .chevs{ margin-top:.9em; }
   .progress{ margin-top:.8em; }
 }
@@ -429,6 +502,8 @@ body.clean .status, body.clean .controls{ display:none !important; }
   .persp{ animation:none; }
   .status span.pulse{ animation:none; }
   .sheet{ transition-duration:.15s; transform:none; }
+  .scrim.on .chevs b{ animation:none; opacity:.85; }
+  .scrim.on .progress i{ animation:none; transform:scaleX(1); }
 }
 </style>
 </head>
@@ -460,7 +535,8 @@ body.clean .status, body.clean .controls{ display:none !important; }
           <div class="face face-fill outer" style="background-image:url('left-flap-outer.png')"></div>
           <div class="face face-fill inner fit" style="background-image:url('left-flap-inner.png')">
             <div class="art art-l">
-              <a class="hotspot" href="https://wa.me/919819119221?text=Hello%20Anthony%2C%20RSVP%20for%20Alvita%20and%20Valency%27s%20wedding%20on%2010%20October%3A%20"
+              <a class="hotspot" id="waLink"
+                 href="https://wa.me/919819119221?text=Hello%20Anthony%2C%20RSVP%20for%20Alvita%20and%20Valency%27s%20wedding%20on%2010%20October%3A%20"
                  target="_blank" rel="noopener"
                  title="RSVP to Anthony on WhatsApp"
                  aria-label="RSVP to Anthony on WhatsApp"
@@ -508,7 +584,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
     <p class="eyebrow">A little note</p>
     <h2 id="introTitle">The card is interactive</h2>
     <div class="orn" aria-hidden="true"><i>&#10022;</i></div>
-    <p class="body">Once the gates swing open, parts of the invitation are tappable.</p>
+    <p class="body">Now that the gates are open, the invitation answers back.</p>
     <ul class="taps">
       <li>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -525,8 +601,63 @@ body.clean .status, body.clean .controls{ display:none !important; }
         </svg>
         <span>Both <em>QR codes</em> open Google Maps</span>
       </li>
+      <li>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="10.5" cy="10.5" r="6.6"/>
+          <path d="M15.4 15.4 21 21M10.5 7.7v5.6M7.7 10.5h5.6"/>
+        </svg>
+        <span>Tap or pinch to <em>zoom</em> right in</span>
+      </li>
     </ul>
     <button class="go" type="button" id="introGo">Got it</button>
+  </div>
+</div>
+
+<!-- RSVP: compose the message first, then hand over to WhatsApp -->
+<div class="scrim" id="waScrim" role="dialog" aria-modal="true" aria-labelledby="waTitle">
+
+  <div class="sheet" id="waCompose">
+    <button class="x" type="button" id="waX" aria-label="Cancel">
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+        <path d="M1.6 1.6l10.8 10.8M12.4 1.6L1.6 12.4"/>
+      </svg>
+    </button>
+    <p class="eyebrow">RSVP</p>
+    <h2 id="waTitle">Send your reply</h2>
+    <div class="orn" aria-hidden="true"><i>&#10022;</i></div>
+    <p class="body">Add a line of your own, or send it just as it is.</p>
+    <label class="sr-only" for="waMsg">Your WhatsApp message</label>
+    <textarea class="compose" id="waMsg" rows="3" placeholder="Your message&hellip;"></textarea>
+    <button class="go" type="button" id="waGo">Open WhatsApp</button>
+  </div>
+
+  <div class="sheet" id="waSending" aria-live="polite" hidden>
+    <p class="eyebrow">One moment</p>
+    <h2>Taking you to WhatsApp</h2>
+    <div class="orn" aria-hidden="true"><i>&#10022;</i></div>
+    <p class="body">Opening a chat with<span class="num">+91 98191 19221</span></p>
+    <div class="chevs" aria-hidden="true"><b>&rsaquo;</b><b>&rsaquo;</b><b>&rsaquo;</b><b>&rsaquo;</b><b>&rsaquo;</b><b>&rsaquo;</b></div>
+    <div class="progress" aria-hidden="true"><i></i></div>
+  </div>
+
+</div>
+
+<!-- on close: the other family sends a card of their own -->
+<div class="scrim" id="byeScrim" role="dialog" aria-modal="true" aria-labelledby="byeTitle">
+  <div class="sheet">
+    <button class="x" type="button" id="byeX" aria-label="Dismiss">
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+        <path d="M1.6 1.6l10.8 10.8M12.4 1.6L1.6 12.4"/>
+      </svg>
+    </button>
+    <p class="eyebrow">One more thing</p>
+    <h2 id="byeTitle">There&rsquo;s a card from Valency&rsquo;s side too</h2>
+    <div class="orn" aria-hidden="true"><i>&#10022;</i></div>
+    <p class="body">The same wedding day, invited by Valency&rsquo;s family.</p>
+    <div class="actions">
+      <a class="go" href="../valency/index.html">View Valency&rsquo;s card</a>
+      <button class="go ghost" type="button" id="byeGo">Dismiss</button>
+    </div>
   </div>
 </div>
 
@@ -554,7 +685,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
     autoplay: qs.get('autoplay') === '1',
     loop:     qs.get('loop')     === '1',
     clean:    qs.get('clean')    === '1',
-    intro:    qs.get('intro')    !== '0',   // the "card is interactive" note on load
+    intro:    qs.get('intro')    !== '0',   // the note, once the gates are open
     petals:   qs.get('petals')   !== '0',
 
     /* true  → crossfade to the flat spread artwork once fully open (exact
@@ -573,7 +704,8 @@ body.clean .status, body.clean .controls{ display:none !important; }
       open:      2500,   // gates swing open
       zoom:      2700,   // camera pull-back while opening
       openHold:  4500,   // (loop mode) how long the open card stays
-      backHold:   900    // (loop mode) pause on the backside between plays
+      backHold:   900,   // (loop mode) pause on the backside between plays
+      waHandoff: 1000    // the ">>>" pause before WhatsApp opens
     },
     closeT: { open: 1500, flip: 1100, zoom: 1500 }  // closing is brisker
   };
@@ -598,14 +730,14 @@ body.clean .status, body.clean .controls{ display:none !important; }
     const from = bgm.volume, t0 = performance.now();
     if (target > 0 && bgm.paused) bgm.play().catch(() => {});
     (function step(t){
-      const k = Math.min(1, (t - t0) / ms);
-      bgm.volume = from + (target - from) * k;
+      const k = Math.min(1, Math.max(0, (t - t0) / ms));   // rAF can stamp just before t0
+      bgm.volume = Math.min(1, Math.max(0, from + (target - from) * k));
       if (k < 1) requestAnimationFrame(step);
       else if (target === 0) bgm.pause();
     })(t0);
   }
 
-  let busy = false, isOpen = false;
+  let busy = false, isOpen = false, noteShown = false;
 
   function refreshUI(){
     btnOpen.disabled  = busy || isOpen;
@@ -636,6 +768,10 @@ body.clean .status, body.clean .controls{ display:none !important; }
     body.classList.add('done');
     isOpen = true;
     busy = false; refreshUI();
+    if (CONFIG.intro && !CONFIG.clean && !CONFIG.loop && !noteShown){   // the note, once, on the open card
+      noteShown = true;
+      setTimeout(() => showSheet(introScrim, $('#introGo')), 700);
+    }
     if (CONFIG.loop) loopNext();
   }
 
@@ -659,6 +795,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
     body.classList.remove('closing');
     isOpen = false;
     busy = false; refreshUI();
+    if (!CONFIG.clean && !CONFIG.loop) setTimeout(() => showSheet(byeScrim, $('#byeGo')), 450);
   }
 
   async function loopNext(){
@@ -673,12 +810,17 @@ body.clean .status, body.clean .controls{ display:none !important; }
   btnClose.addEventListener('click', closeCard);
   addEventListener('keydown', e => {
     const sheet = document.querySelector('.scrim.on');
+    const typing = /^(textarea|input)$/.test((e.target.tagName || '').toLowerCase());
+    if (typing && e.key === 'Enter' && (e.metaKey || e.ctrlKey)){ waGo.click(); return; }
+    if (typing && e.key !== 'Escape') return;              // let typing be typing
     if (e.key === ' ' || e.key === 'Enter'){
       if (sheet) return;                                   // the sheet's own buttons answer
       if (!isOpen){ e.preventDefault(); openCard(); }
     } else if (e.key === 'Escape' || e.key.toLowerCase() === 'c'){
       if (sheet === introScrim){ closeIntro(); return; }
-      if (sheet) return;                                   // a handoff runs to completion
+      if (sheet === waScrim)   { closeWa();    return; }   // a running handoff is left alone
+      if (sheet === byeScrim)  { closeBye();   return; }
+      if (sheet) return;
       closeCard();
     }
   });
@@ -712,6 +854,50 @@ body.clean .status, body.clean .controls{ display:none !important; }
   $('#introGo').addEventListener('click', closeIntro);
   $('#introX').addEventListener('click', closeIntro);
   introScrim.addEventListener('click', e => { if (e.target === introScrim) closeIntro(); });
+
+  /* ---------- RSVP: compose, then hand over ---------- */
+  const waScrim = $('#waScrim'), waLink = $('#waLink'), waMsg = $('#waMsg');
+  const waCompose = $('#waCompose'), waSending = $('#waSending'), waGo = $('#waGo');
+  const WA_BASE = waLink.href.split('?')[0];
+  const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  let waTimer = null, waSeeded = false;
+
+  function openWa(){
+    if (!waSeeded){                                     // the card's own wording, editable
+      waMsg.value = new URL(waLink.href).searchParams.get('text') || '';
+      waSeeded = true;                                  // and their edits survive a cancel
+    }
+    waSending.hidden = true; waCompose.hidden = false;
+    showSheet(waScrim, finePointer ? waMsg : waGo);     // no surprise keyboard on a phone
+    if (finePointer) setTimeout(() => waMsg.setSelectionRange(waMsg.value.length, waMsg.value.length), 130);
+  }
+  function closeWa(){ if (!waTimer) hideSheet(waScrim); }   // never mid-handoff
+
+  function toWhatsApp(){
+    const t = waMsg.value.trim();
+    const url = WA_BASE + (t ? '?text=' + encodeURIComponent(t) : '');
+    const win = window.open(url, '_blank');             // still inside the click's activation window
+    if (win) win.opener = null; else location.href = url;
+  }
+
+  waLink.addEventListener('click', e => { e.preventDefault(); openWa(); });
+  $('#waX').addEventListener('click', closeWa);
+  waScrim.addEventListener('click', e => { if (e.target === waScrim) closeWa(); });
+  waGo.addEventListener('click', () => {
+    if (waTimer) return;
+    waCompose.hidden = true; waSending.hidden = false;  // unhiding restarts the 1s fill
+    waTimer = setTimeout(() => {
+      toWhatsApp();
+      setTimeout(() => { hideSheet(waScrim); waTimer = null; }, 700);
+    }, CONFIG.t.waHandoff);
+  });
+
+  /* ---------- on close: point them at the other family's card ---------- */
+  const byeScrim = $('#byeScrim');
+  const closeBye = () => hideSheet(byeScrim);
+  $('#byeX').addEventListener('click', closeBye);
+  $('#byeGo').addEventListener('click', closeBye);
+  byeScrim.addEventListener('click', e => { if (e.target === byeScrim) closeBye(); });
 
   /* ---------- pinch / pan / tap / scroll zoom ---------- */
   const zoomer = $('#zoomer');
@@ -856,7 +1042,6 @@ body.clean .status, body.clean .controls{ display:none !important; }
     body.classList.add('ready');
     refreshUI();
     if (CONFIG.autoplay) setTimeout(openCard, 900);
-    else if (CONFIG.intro && !CONFIG.clean) setTimeout(() => showSheet(introScrim, $('#introGo')), 700);
   });
 
   /* console / integration API */
