@@ -314,6 +314,7 @@ body.ready .controls{ opacity:1; pointer-events:auto; }
 .sheet{
   position:relative; flex:none; margin:auto;
   width:min(430px, 100%);
+  max-height:100%; overflow-y:auto;         /* auto margins centre even when overflowing */
   padding:clamp(30px,4.6vmin,42px) clamp(20px,4vmin,38px) clamp(24px,3.8vmin,34px);
   text-align:center;
   background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(253,246,234,.98));
@@ -381,7 +382,7 @@ body.ready .controls{ opacity:1; pointer-events:auto; }
 .taps em{ font-style:italic; color:#4d3b24; }
 
 .sheet .go{
-  display:block; width:min(100%, 270px); min-height:48px;
+  display:flex; align-items:center; justify-content:center; text-decoration:none; width:min(100%, 270px); min-height:48px;
   margin:1.5em auto 0; font:inherit; font-size:13px;
   letter-spacing:.2em; text-indent:.2em; text-transform:uppercase;
   color:#fffdf7; background:linear-gradient(180deg, #c9993c, #a9781f);
@@ -410,16 +411,65 @@ body.ready .controls{ opacity:1; pointer-events:auto; }
   box-shadow:inset 0 1px 3px rgba(120,90,50,.10), 0 0 0 3px rgba(185,138,47,.18);
 }
 .compose::placeholder{ color:rgba(107,83,53,.42); }
+#waCompose p.body{ max-width:40ch; }             /* one line, not two */
 .notice{
   margin:1.05em auto 0; padding:.7em .9em;
   background:rgba(185,138,47,.08);
   border:1px solid rgba(185,138,47,.26); border-radius:3px;
   font-size:clamp(13px, 1vmin + 9.5px, 15px); line-height:1.5; color:var(--ink);
 }
-.notice b{
-  display:block; margin-top:.15em; white-space:nowrap;
-  font-weight:500; font-size:1.2em; letter-spacing:.04em; color:#4d3b24;
+.notice p{ margin:0; }
+.numline{
+  display:flex; align-items:center; justify-content:center; gap:.15em;
+  margin-top:.3em;
 }
+a.telnum{
+  font-size:1.25em; letter-spacing:.045em; white-space:nowrap;
+  color:#4d3b24; text-decoration:none;
+  border-bottom:1px solid rgba(185,138,47,.5); padding-bottom:1px;
+  transition:color .2s ease, border-color .2s ease;
+}
+a.telnum:hover{ color:#8a6413; border-bottom-color:var(--gold); }
+a.telnum:focus-visible{ outline:none; box-shadow:0 0 0 2px var(--gold); border-radius:2px; }
+
+/* the address, with a copy button tucked against it */
+.addr{ display:flex; align-items:flex-start; gap:.5em; text-align:left; }
+.addr p{ flex:1; }
+
+.copy{
+  flex:none; width:42px; height:42px; margin:-9px -10px -9px 0;
+  display:grid; place-items:center;
+  padding:0; border:0; background:none; color:var(--gold);
+  border-radius:50%; cursor:pointer; -webkit-tap-highlight-color:transparent;
+  transition:color .2s ease, transform .15s ease;
+}
+.copy::before{
+  content:""; position:absolute; width:30px; height:30px; border-radius:50%;
+  background:rgba(185,138,47,.10); transition:background .2s ease, box-shadow .2s ease;
+}
+.copy svg{ position:relative; width:16px; height:16px; }
+.copy:hover::before{ background:rgba(185,138,47,.24); }
+.copy:active{ transform:scale(.92); }
+.copy:focus-visible{ outline:none; }
+.copy:focus-visible::before{ box-shadow:0 0 0 2px var(--gold); }
+.copy .i-ok{ display:none; }
+.copy.ok{ color:#5f7f3e; }
+.copy.ok::before{ background:rgba(95,127,62,.14); }
+.copy.ok .i-copy{ display:none; }
+.copy.ok .i-ok{ display:block; }
+
+/* stacked choices */
+.actions{ display:flex; flex-direction:column; align-items:center; gap:.55em; margin-top:1.4em; }
+.actions .go{ margin-top:0; }
+.go.ghost{
+  color:var(--ink); background:none; box-shadow:none;
+  border:1px solid rgba(185,138,47,.5);
+}
+.go.ghost:hover{ background:rgba(185,138,47,.12); filter:none; box-shadow:none; }
+.go.plain{
+  min-height:42px; color:var(--ink); background:none; border:0; box-shadow:none; opacity:.7;
+}
+.go.plain:hover{ background:rgba(185,138,47,.10); opacity:1; filter:none; box-shadow:none; }
 
 /* the one-second handoff: chevrons chase right while a hairline fills */
 .sheet .num{
@@ -475,6 +525,12 @@ body.ready .controls{ opacity:1; pointer-events:auto; }
   .compose{ min-height:2.6em; margin-top:.7em; }
   .notice{ margin-top:.7em; padding:.5em .75em; }
   #waCompose p.body{ display:none; }        /* the textarea speaks for itself down here */
+  .addr{ gap:.35em; }
+  .notice{ line-height:1.4; }
+  .actions{ margin-top:.8em; gap:.4em; flex-direction:row; flex-wrap:wrap; justify-content:center; }
+  .actions .go{ width:auto; flex:1 1 40%; min-width:9em; padding-left:1.1em; padding-right:1.1em; }
+  .actions .go.plain{ flex-basis:100%; min-height:34px; }
+  .lead{ display:none; }                    /* "Google Maps" alone still reads */
   .chevs{ margin-top:.9em; }
   .progress{ margin-top:.8em; }
 }
@@ -508,6 +564,8 @@ body.clean .status, body.clean .controls{ display:none !important; }
   WhatsApp, 919819119221. With love, no boxed gifts or bouquets please.
 </p>
 
+<span class="sr-only" id="copyLive" aria-live="polite"></span>
+
 <div class="petals" aria-hidden="true"></div>
 
 <div class="zoomer" id="zoomer">
@@ -540,12 +598,18 @@ body.clean .status, body.clean .controls{ display:none !important; }
           <div class="face face-fill outer" style="background-image:url('right-flap-outer.png')"></div>
           <div class="face face-fill inner fit" style="background-image:url('right-flap-inner.png')">
             <div class="art art-r">
-              <a class="hotspot" href="https://maps.app.goo.gl/Hzrd6hJ28vYLuKH36"
+              <a class="hotspot venue" href="https://maps.app.goo.gl/Hzrd6hJ28vYLuKH36"
+                 data-name="St. Joseph&rsquo;s Church"
+                 data-address="St. Joseph&rsquo;s Church Road, Near Juhu Bus Depot, Vile Parle West, Mumbai."
+                 data-apple="https://maps.apple.com/?q=St.%20Joseph's%20Church%2C%20Juhu&amp;ll=19.1072325,72.8264692"
                  target="_blank" rel="noopener"
                  title="Directions to St. Joseph&rsquo;s Church"
                  aria-label="Directions to St. Joseph&rsquo;s Church, Juhu, Vile Parle West"
                  style="left:8%; top:12.5%; width:84%; height:34%;"></a>
-              <a class="hotspot" href="https://maps.app.goo.gl/DYg9eJXNf3GmCWth8"
+              <a class="hotspot venue" href="https://maps.app.goo.gl/DYg9eJXNf3GmCWth8"
+                 data-name="Galaxy Banquets"
+                 data-address="Vijay Condominium, 301, 3rd Floor, Mehra Compound, AK Rd, Telephone Exchange Rd, next to Regal International Fab Hotel, opp. Sakinaka, Saki Naka, Mumbai."
+                 data-apple="https://maps.apple.com/?q=Galaxy%20Banquet&amp;ll=19.1003423,72.8844028"
                  target="_blank" rel="noopener"
                  title="Directions to Galaxy Banquets"
                  aria-label="Directions to Galaxy Banquets, Saki Naka"
@@ -574,7 +638,6 @@ body.clean .status, body.clean .controls{ display:none !important; }
     <p class="eyebrow">A little note</p>
     <h2 id="introTitle">The card is interactive</h2>
     <div class="orn" aria-hidden="true"><i>&#10022;</i></div>
-    <p class="body">Now that the gates are open, the invitation answers back.</p>
     <ul class="taps">
       <li>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -615,7 +678,22 @@ body.clean .status, body.clean .controls{ display:none !important; }
     <p class="eyebrow">RSVP</p>
     <h2 id="waTitle">Send your reply</h2>
     <div class="orn" aria-hidden="true"><i>&#10022;</i></div>
-    <p class="body">Add a line of your own, or send it just as it is.</p>
+    <p class="body">Add your own line, or send as is.</p>
+    <div class="notice">
+      <p>Your reply goes to</p>
+      <p class="numline">
+        <a class="telnum" href="tel:+919819119221">+91 98191 19221</a>
+        <button class="copy" type="button" id="waCopy" aria-label="Copy the number">
+      <svg class="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="9" y="9" width="12" height="12" rx="2.2"/>
+        <path d="M5 15H4.2A2.2 2.2 0 0 1 2 12.8V4.2A2.2 2.2 0 0 1 4.2 2h8.6A2.2 2.2 0 0 1 15 4.2V5"/>
+      </svg>
+      <svg class="i-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 12.6 9.2 17.8 20 6.4"/>
+      </svg>
+    </button>
+      </p>
+    </div>
     <label class="sr-only" for="waMsg">Your WhatsApp message</label>
     <textarea class="compose" id="waMsg" rows="3" placeholder="Your message&hellip;"></textarea>
     <button class="go" type="button" id="waGo">Open WhatsApp</button>
@@ -639,6 +717,38 @@ body.clean .status, body.clean .controls{ display:none !important; }
   <button id="btnMute" type="button" aria-pressed="false">Mute Audio</button>
   <button id="btnClose" type="button" disabled>Close</button>
 </nav>
+
+
+<!-- a QR code was tapped: the address, and a choice of maps -->
+<div class="scrim" id="mapScrim" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
+  <div class="sheet">
+    <button class="x" type="button" id="mapX" aria-label="Dismiss">
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+        <path d="M1.6 1.6l10.8 10.8M12.4 1.6L1.6 12.4"/>
+      </svg>
+    </button>
+    <p class="eyebrow">Getting there</p>
+    <h2 id="mapTitle"></h2>
+    <div class="orn" aria-hidden="true"><i>&#10022;</i></div>
+    <div class="notice addr">
+      <p id="mapAddr"></p>
+      <button class="copy" type="button" id="mapCopy" aria-label="Copy the address">
+      <svg class="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="9" y="9" width="12" height="12" rx="2.2"/>
+        <path d="M5 15H4.2A2.2 2.2 0 0 1 2 12.8V4.2A2.2 2.2 0 0 1 4.2 2h8.6A2.2 2.2 0 0 1 15 4.2V5"/>
+      </svg>
+      <svg class="i-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 12.6 9.2 17.8 20 6.4"/>
+      </svg>
+    </button>
+    </div>
+    <div class="actions">
+      <a class="go"       id="mapGoogle" target="_blank" rel="noopener"><span class="lead">Open in&nbsp;</span>Google Maps</a>
+      <a class="go ghost" id="mapApple"  target="_blank" rel="noopener"><span class="lead">Open in&nbsp;</span>Apple Maps</a>
+      <button class="go plain" type="button" id="mapDismiss">Dismiss</button>
+    </div>
+  </div>
+</div>
 
 <audio id="bgm" src="music.mp3" loop preload="auto"></audio>
 
@@ -792,6 +902,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
     } else if (e.key === 'Escape' || e.key.toLowerCase() === 'c'){
       if (sheet === introScrim){ closeIntro(); return; }
       if (sheet === waScrim)   { closeWa();    return; }   // a running handoff is left alone
+      if (sheet === mapScrim)  { closeMap();   return; }
       if (sheet) return;
       closeCard();
     }
@@ -863,6 +974,51 @@ body.clean .status, body.clean .controls{ display:none !important; }
       setTimeout(() => { hideSheet(waScrim); waTimer = null; }, 700);
     }, CONFIG.t.waHandoff);
   });
+
+  /* ---------- copying, with a fallback for browsers that refuse the API ---------- */
+  const copyLive = $('#copyLive');
+  function legacyCopy(text){
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch {}
+    ta.remove();
+    return ok;
+  }
+  async function copyText(text, btn){
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; }
+    catch { ok = legacyCopy(text); }
+    if (!ok) return;
+    btn.classList.add('ok');
+    copyLive.textContent = 'Copied';
+    clearTimeout(btn._undo);
+    btn._undo = setTimeout(() => { btn.classList.remove('ok'); copyLive.textContent = ''; }, 1800);
+  }
+
+  /* ---------- a QR code: the address, then a choice of maps ---------- */
+  const mapScrim = $('#mapScrim'), mapTitle = $('#mapTitle'), mapAddr = $('#mapAddr');
+  const mapGoogle = $('#mapGoogle'), mapApple = $('#mapApple');
+  const closeMap = () => hideSheet(mapScrim);
+
+  document.querySelectorAll('a.venue').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    mapTitle.textContent = a.dataset.name;
+    mapAddr.textContent  = a.dataset.address;
+    mapGoogle.href = a.href;                          // the same link the card always carried
+    mapApple.href  = a.dataset.apple;
+    showSheet(mapScrim, $('#mapDismiss'));
+  }));
+  $('#mapX').addEventListener('click', closeMap);
+  $('#mapDismiss').addEventListener('click', closeMap);
+  $('#mapCopy').addEventListener('click', () => copyText(mapAddr.textContent, $('#mapCopy')));
+  mapScrim.addEventListener('click', e => { if (e.target === mapScrim) closeMap(); });
+  [mapGoogle, mapApple].forEach(a =>                  // hand over, then tidy up behind us
+    a.addEventListener('click', () => setTimeout(closeMap, 250)));
+
+  $('#waCopy').addEventListener('click', () => copyText($('.telnum').textContent, $('#waCopy')));
 
   /* ---------- pinch / pan / tap / scroll zoom ---------- */
   const zoomer = $('#zoomer');
