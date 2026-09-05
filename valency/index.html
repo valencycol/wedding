@@ -223,7 +223,8 @@ body.is-open .flap .outer::after{ opacity:1; }
   pointer-events:none;               /* armed only once the card is open */
   -webkit-tap-highlight-color:rgba(185,138,47,.18);
 }
-body.done .hotspot{ pointer-events:auto; cursor:pointer; }
+/* armed only once the intro note has been seen and dismissed */
+body.done.taps-live .hotspot{ pointer-events:auto; cursor:pointer; }
 .hotspot:hover, .hotspot:focus-visible{
   outline:none;
   box-shadow:0 0 0 2px rgba(185,138,47,.55), 0 0 24px rgba(185,138,47,.30);
@@ -852,6 +853,10 @@ body.clean .status, body.clean .controls{ display:none !important; }
 
   let busy = false, isOpen = false, noteShown = false;
 
+  /* the hotspots stay inert until the card is open AND the note has been read,
+     so nothing is tappable in the beat between the gates parting and the sheet */
+  const armTaps = () => { if (isOpen && !busy) body.classList.add('taps-live'); };
+
   function refreshUI(){
     btnOpen.disabled  = busy || isOpen;
     btnClose.disabled = busy || !isOpen;
@@ -887,6 +892,8 @@ body.clean .status, body.clean .controls{ display:none !important; }
         noteShown = true;
         showSheet(introScrim, $('#introGo'));
       }, 700);
+    } else {
+      armTaps();                                       // no note to wait on
     }
     if (CONFIG.loop) loopNext();
   }
@@ -895,7 +902,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
     if (busy || !isOpen) return;
     busy = true; refreshUI();
     resetZoom(true);
-    body.classList.remove('done', 'show-spread');
+    body.classList.remove('done', 'show-spread', 'taps-live');
     fadeBgm(0);
     body.classList.add('closing');
     setDur(CONFIG.closeT.open, CONFIG.closeT.flip, CONFIG.closeT.zoom);
@@ -965,7 +972,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
     lastFocus = null;
   }
 
-  const closeIntro = () => hideSheet(introScrim);
+  const closeIntro = () => { hideSheet(introScrim); armTaps(); };   // now the taps are live
   $('#introGo').addEventListener('click', closeIntro);
   $('#introX').addEventListener('click', closeIntro);
   introScrim.addEventListener('click', e => { if (e.target === introScrim) closeIntro(); });
