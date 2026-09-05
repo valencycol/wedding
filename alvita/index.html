@@ -970,7 +970,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
   const closeIntro = () => { hideSheet(introScrim); armTaps(); };   // now the taps are live
   $('#introGo').addEventListener('click', closeIntro);
   $('#introX').addEventListener('click', closeIntro);
-  introScrim.addEventListener('click', e => { if (e.target === introScrim) closeIntro(); });
+  /* no backdrop dismiss here: the note is closed only by its ✕ or its button */
 
   /* ---------- RSVP: compose, then hand over ---------- */
   const waScrim = $('#waScrim'), waLink = $('#waLink'), waMsg = $('#waMsg');
