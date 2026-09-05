@@ -381,7 +381,7 @@ body.ready .controls{ opacity:1; pointer-events:auto; }
 .taps em{ font-style:italic; color:#4d3b24; }
 
 .sheet .go{
-  display:flex; align-items:center; justify-content:center; text-decoration:none; width:min(100%, 270px); min-height:48px;
+  display:block; width:min(100%, 270px); min-height:48px;
   margin:1.5em auto 0; font:inherit; font-size:13px;
   letter-spacing:.2em; text-indent:.2em; text-transform:uppercase;
   color:#fffdf7; background:linear-gradient(180deg, #c9993c, #a9781f);
@@ -420,15 +420,6 @@ body.ready .controls{ opacity:1; pointer-events:auto; }
   display:block; margin-top:.15em; white-space:nowrap;
   font-weight:500; font-size:1.2em; letter-spacing:.04em; color:#4d3b24;
 }
-
-/* two stacked choices */
-.actions{ display:flex; flex-direction:column; align-items:center; gap:.6em; margin-top:1.5em; }
-.actions .go{ margin-top:0; }
-.go.ghost{
-  color:var(--ink); background:none; box-shadow:none;
-  border:1px solid rgba(185,138,47,.5);
-}
-.go.ghost:hover{ background:rgba(185,138,47,.12); filter:none; box-shadow:none; }
 
 /* the one-second handoff: chevrons chase right while a hairline fills */
 .sheet .num{
@@ -484,7 +475,6 @@ body.ready .controls{ opacity:1; pointer-events:auto; }
   .compose{ min-height:2.6em; margin-top:.7em; }
   .notice{ margin-top:.7em; padding:.5em .75em; }
   #waCompose p.body{ display:none; }        /* the textarea speaks for itself down here */
-  .actions{ margin-top:1em; gap:.45em; }
   .chevs{ margin-top:.9em; }
   .progress{ margin-top:.8em; }
 }
@@ -642,25 +632,6 @@ body.clean .status, body.clean .controls{ display:none !important; }
 
 </div>
 
-<!-- on close: the other family sends a card of their own -->
-<div class="scrim" id="byeScrim" role="dialog" aria-modal="true" aria-labelledby="byeTitle">
-  <div class="sheet">
-    <button class="x" type="button" id="byeX" aria-label="Dismiss">
-      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
-        <path d="M1.6 1.6l10.8 10.8M12.4 1.6L1.6 12.4"/>
-      </svg>
-    </button>
-    <p class="eyebrow">One more thing</p>
-    <h2 id="byeTitle">There&rsquo;s a card from Valency&rsquo;s side too</h2>
-    <div class="orn" aria-hidden="true"><i>&#10022;</i></div>
-    <p class="body">The same wedding day, invited by Valency&rsquo;s family.</p>
-    <div class="actions">
-      <a class="go" href="../valency/index.html">View Valency&rsquo;s card</a>
-      <button class="go ghost" type="button" id="byeGo">Dismiss</button>
-    </div>
-  </div>
-</div>
-
 <div class="status" aria-live="polite"><span id="statusText" class="pulse">Tap to open the card</span></div>
 
 <nav class="controls" aria-label="Invitation controls">
@@ -768,9 +739,12 @@ body.clean .status, body.clean .controls{ display:none !important; }
     body.classList.add('done');
     isOpen = true;
     busy = false; refreshUI();
-    if (CONFIG.intro && !CONFIG.clean && !CONFIG.loop && !noteShown){   // the note, once, on the open card
-      noteShown = true;
-      setTimeout(() => showSheet(introScrim, $('#introGo')), 700);
+    if (CONFIG.intro && !CONFIG.clean && !CONFIG.loop && !noteShown){   // the note: once, and only on the open card
+      setTimeout(() => {
+        if (noteShown || !isOpen || busy) return;      // closed again while we waited: let it be
+        noteShown = true;
+        showSheet(introScrim, $('#introGo'));
+      }, 700);
     }
     if (CONFIG.loop) loopNext();
   }
@@ -795,7 +769,6 @@ body.clean .status, body.clean .controls{ display:none !important; }
     body.classList.remove('closing');
     isOpen = false;
     busy = false; refreshUI();
-    if (!CONFIG.clean && !CONFIG.loop) setTimeout(() => showSheet(byeScrim, $('#byeGo')), 450);
   }
 
   async function loopNext(){
@@ -819,7 +792,6 @@ body.clean .status, body.clean .controls{ display:none !important; }
     } else if (e.key === 'Escape' || e.key.toLowerCase() === 'c'){
       if (sheet === introScrim){ closeIntro(); return; }
       if (sheet === waScrim)   { closeWa();    return; }   // a running handoff is left alone
-      if (sheet === byeScrim)  { closeBye();   return; }
       if (sheet) return;
       closeCard();
     }
@@ -891,13 +863,6 @@ body.clean .status, body.clean .controls{ display:none !important; }
       setTimeout(() => { hideSheet(waScrim); waTimer = null; }, 700);
     }, CONFIG.t.waHandoff);
   });
-
-  /* ---------- on close: point them at the other family's card ---------- */
-  const byeScrim = $('#byeScrim');
-  const closeBye = () => hideSheet(byeScrim);
-  $('#byeX').addEventListener('click', closeBye);
-  $('#byeGo').addEventListener('click', closeBye);
-  byeScrim.addEventListener('click', e => { if (e.target === byeScrim) closeBye(); });
 
   /* ---------- pinch / pan / tap / scroll zoom ---------- */
   const zoomer = $('#zoomer');
