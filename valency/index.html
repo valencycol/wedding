@@ -602,7 +602,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
           <div class="face face-fill outer" style="background-image:url('left-flap-outer.png')"></div>
           <div class="face face-fill inner fit" style="background-image:url('left-flap-inner.png')">
             <div class="art art-l">
-              <a class="hotspot" id="waLink"
+              <a class="hotspot" id="waLink" tabindex="-1"
                  href="https://wa.me/918356921201?text=Hello%20Sharmila%2C%20RSVP%20for%20Valency%20and%20Alvita%27s%20wedding%20on%2010%20October%3A%20"
                  target="_blank" rel="noopener"
                  title="RSVP to Sharmila on WhatsApp"
@@ -617,7 +617,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
           <div class="face face-fill outer" style="background-image:url('right-flap-outer.png')"></div>
           <div class="face face-fill inner fit" style="background-image:url('right-flap-inner.png')">
             <div class="art art-r">
-              <a class="hotspot venue" href="https://maps.app.goo.gl/Hzrd6hJ28vYLuKH36"
+              <a class="hotspot venue" tabindex="-1" href="https://maps.app.goo.gl/Hzrd6hJ28vYLuKH36"
                  data-name="St. Joseph&rsquo;s Church"
                  data-address="St. Joseph&rsquo;s Church Road, Near Juhu Bus Depot, Vile Parle West, Mumbai."
                  data-apple="https://maps.apple.com/?q=St.%20Joseph's%20Church%2C%20Juhu&amp;ll=19.1072325,72.8264692"
@@ -625,7 +625,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
                  title="Directions to St. Joseph&rsquo;s Church"
                  aria-label="Directions to St. Joseph&rsquo;s Church, Juhu, Vile Parle West"
                  style="left:8%; top:12.5%; width:84%; height:34%;"></a>
-              <a class="hotspot venue" href="https://maps.app.goo.gl/DYg9eJXNf3GmCWth8"
+              <a class="hotspot venue" tabindex="-1" href="https://maps.app.goo.gl/DYg9eJXNf3GmCWth8"
                  data-name="Galaxy Banquets"
                  data-address="Vijay Condominium, 301, 3rd Floor, Mehra Compound, AK Rd, Telephone Exchange Rd, next to Regal International Fab Hotel, opp. Sakinaka, Saki Naka, Mumbai."
                  data-apple="https://maps.apple.com/?q=Galaxy%20Banquet&amp;ll=19.1003423,72.8844028"
@@ -839,10 +839,58 @@ body.clean .status, body.clean .controls{ display:none !important; }
   if (CONFIG.clean) body.classList.add('clean');
 
   const bgm = document.getElementById('bgm');
+
+  /* Safari on iOS ignores writes to .volume, which would make every fade below a
+     silent no-op: the music would arrive at full blast and Mute would only bite
+     when the ramp finally called pause(). So find out what this browser honours. */
+  const canSetVolume = (() => {
+    try { bgm.volume = 0.5; return Math.abs(bgm.volume - 0.5) < 0.01; }
+    catch { return false; }
+  })();
   bgm.volume = 0;
+
+  /* ...and where it does not, run the element through a gain node instead, which
+     iOS does respect. Built lazily, inside the tap that starts the card, because
+     an AudioContext made outside a gesture can stay suspended. Desktop and
+     Android never come down this path — .volume already works there. */
+  let actx = null, gain = null, graphTried = false;
+  function ensureGraph(){
+    if (graphTried || canSetVolume) return;
+    graphTried = true;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try {
+      actx = new AC();
+      gain = actx.createGain();
+      gain.gain.value = 0;
+      actx.createMediaElementSource(bgm).connect(gain).connect(actx.destination);
+    } catch { actx = null; gain = null; }   // no graph: the hard-mute path below
+  }
+
   function fadeBgm(target, ms = 1800){
+    ensureGraph();
+    if (target > 0){
+      bgm.muted = false;
+      if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
+      if (bgm.paused) bgm.play().catch(() => {});
+    }
+
+    if (gain){                                             // a real ramp, iOS included
+      const t = actx.currentTime;
+      gain.gain.cancelScheduledValues(t);
+      gain.gain.setValueAtTime(gain.gain.value, t);
+      gain.gain.linearRampToValueAtTime(target, t + ms / 1000);
+      if (target === 0)                                    // unless a fade-in overtook us
+        setTimeout(() => { if (gain.gain.value < 0.01) bgm.pause(); }, ms + 60);
+      return;
+    }
+
+    if (!canSetVolume){                                    // no volume, no graph: cut it
+      if (target === 0){ bgm.muted = true; bgm.pause(); }
+      return;
+    }
+
     const from = bgm.volume, t0 = performance.now();
-    if (target > 0 && bgm.paused) bgm.play().catch(() => {});
     (function step(t){
       const k = Math.min(1, Math.max(0, (t - t0) / ms));   // rAF can stamp just before t0
       bgm.volume = Math.min(1, Math.max(0, from + (target - from) * k));
@@ -853,13 +901,32 @@ body.clean .status, body.clean .controls{ display:none !important; }
 
   let busy = false, isOpen = false, noteShown = false;
 
-  /* the hotspots stay inert until the card is open AND the note has been read,
-     so nothing is tappable in the beat between the gates parting and the sheet */
-  const armTaps = () => { if (isOpen && !busy) body.classList.add('taps-live'); };
+  const anySheet = () => !!document.querySelector('.scrim.on');
+
+  /* the hotspots stay dead until the card is open AND the note has been read.
+     tabindex rides along with the class: pointer-events:none stops the finger
+     but not Tab + Enter, which would otherwise walk straight through the gate. */
+  const hotspots = [...document.querySelectorAll('a.hotspot')];
+  const tappable = on => {
+    body.classList.toggle('taps-live', on);
+    hotspots.forEach(a => a.tabIndex = on ? 0 : -1);
+  };
+  const armTaps = () => { if (isOpen && !busy) tappable(true); };
+
+  /* the one gate for every gesture and every hotspot: nothing responds while the
+     card is still opening, nor in the beat before the note has been dismissed */
+  const live = () => body.classList.contains('taps-live') && !busy && !anySheet();
+
+  /* while a sheet is up it owns the input: the card, the status line and the
+     controls step out of reach of the pointer, of Tab and of screen readers,
+     so Close can no longer be triggered from behind the note */
+  const bg = [$('#zoomer'), $('.status'), $('.controls')];
+  const setBgInert = on => bg.forEach(el => { if (el) el.inert = on; });
 
   function refreshUI(){
-    btnOpen.disabled  = busy || isOpen;
-    btnClose.disabled = busy || !isOpen;
+    const sheet = anySheet();
+    btnOpen.disabled  = busy || isOpen || sheet;
+    btnClose.disabled = busy || !isOpen || sheet;
     body.classList.toggle('ui-busy', busy);
     if (!busy){
       statusText.textContent = isOpen ? 'Tap or pinch to zoom' : 'Tap to open the card';
@@ -902,7 +969,8 @@ body.clean .status, body.clean .controls{ display:none !important; }
     if (busy || !isOpen) return;
     busy = true; refreshUI();
     resetZoom(true);
-    body.classList.remove('done', 'show-spread', 'taps-live');
+    body.classList.remove('done', 'show-spread');
+    tappable(false);
     fadeBgm(0);
     body.classList.add('closing');
     setDur(CONFIG.closeT.open, CONFIG.closeT.flip, CONFIG.closeT.zoom);
@@ -958,18 +1026,21 @@ body.clean .status, body.clean .controls{ display:none !important; }
 
   /* ---------- modals ---------- */
   const introScrim = $('#introScrim');
-  const anySheet = () => !!document.querySelector('.scrim.on');
   let lastFocus = null;
 
   function showSheet(el, focusEl){
-    lastFocus = document.activeElement;
+    lastFocus = document.activeElement;        // noted before it is made inert
+    setBgInert(true);
     el.classList.add('on');
+    refreshUI();
     if (focusEl) setTimeout(() => focusEl.focus(), 80);
   }
   function hideSheet(el){
     el.classList.remove('on');
+    if (!anySheet()) setBgInert(false);        // reachable again before we focus it
     if (lastFocus && lastFocus.focus) lastFocus.focus();
     lastFocus = null;
+    refreshUI();
   }
 
   const closeIntro = () => { hideSheet(introScrim); armTaps(); };   // now the taps are live
@@ -1002,7 +1073,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
     if (win) win.opener = null; else location.href = url;
   }
 
-  waLink.addEventListener('click', e => { e.preventDefault(); openWa(); });
+  waLink.addEventListener('click', e => { e.preventDefault(); if (live()) openWa(); });
   $('#waX').addEventListener('click', closeWa);
   waScrim.addEventListener('click', e => { if (e.target === waScrim) closeWa(); });
   waGo.addEventListener('click', () => {
@@ -1044,6 +1115,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
 
   document.querySelectorAll('a.venue').forEach(a => a.addEventListener('click', e => {
     e.preventDefault();
+    if (!live()) return;                              // a stray Enter, or a screen reader
     mapTitle.textContent = a.dataset.name;
     mapAddr.textContent  = a.dataset.address;
     mapGoogle.href = a.href;                          // the same link the card always carried
@@ -1108,7 +1180,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
   addEventListener('pointermove', e => {
     if (!pts.has(e.pointerId)) return;
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pts.size === 2 && pinch){
+    if (pts.size === 2 && pinch && live()){
       const [a, b] = [...pts.values()];
       const d  = Math.hypot(a.x - b.x, a.y - b.y);
       const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
@@ -1121,7 +1193,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
     } else if (pts.size === 1 && drag){
       const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
       drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));
-      if (Z.s > 1.001){                                   // one-finger pan when zoomed
+      if (Z.s > 1.001 && live()){                         // one-finger pan when zoomed
         Z.tx = drag.tx0 + dx; Z.ty = drag.ty0 + dy;
         clampPan(); applyZ(false);
       }
@@ -1150,13 +1222,17 @@ body.clean .status, body.clean .controls{ display:none !important; }
   /* closed → a tap opens the card; open → a tap zooms in / back out */
   function handleTap(x, y){
     if (busy || anySheet()) return;
-    if (!isOpen){ openCard(); return; }
+    if (!isOpen){ openCard(); return; }   // the closed card always answers a tap
+    if (!live()) return;                  // ...but zooming waits for the note
     if (Z.s > 1.05) resetZoom(true);
     else zoomAt(x, y, CONFIG.tapZoom / Z.s, true);
   }
 
   addEventListener('wheel', e => {                        // trackpad pinch + mouse wheel
-    e.preventDefault();
+    const overSheet = e.target && e.target.closest && e.target.closest('.scrim');
+    if (overSheet && !e.ctrlKey) return;                  // let a tall sheet scroll itself
+    e.preventDefault();                                   // page zoom stays off regardless
+    if (!live()) return;
     const f = Math.exp(-e.deltaY * (e.ctrlKey ? 0.0035 : 0.0012));
     zoomAt(e.clientX, e.clientY, f, false);
   }, { passive: false });
