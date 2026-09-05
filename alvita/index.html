@@ -296,6 +296,126 @@ body.ready .controls{ opacity:1; pointer-events:auto; }
 .controls button:disabled{ opacity:.32; cursor:default; }
 .controls button:focus-visible{ outline:none; box-shadow:0 0 0 2px var(--gold); }
 
+/* ---------- modals: the "it's interactive" note ----------
+   Flex column + margin:auto centres the sheet without clipping it on short
+   phones; the scrim itself scrolls when the sheet is taller than the screen. */
+.scrim{
+  position:fixed; inset:0; z-index:60;
+  display:flex; flex-direction:column; align-items:center;
+  padding:calc(18px + env(safe-area-inset-top, 0px)) 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain; touch-action:pan-y;
+  background:radial-gradient(90vmax 70vmax at 50% 42%, rgba(255,253,247,.70), rgba(236,218,191,.88));
+  backdrop-filter:blur(7px) saturate(1.05); -webkit-backdrop-filter:blur(7px) saturate(1.05);
+  opacity:0; pointer-events:none; transition:opacity .5s ease;
+}
+.scrim.on{ opacity:1; pointer-events:auto; }
+
+.sheet{
+  position:relative; flex:none; margin:auto;
+  width:min(430px, 100%);
+  padding:clamp(30px,4.6vmin,42px) clamp(20px,4vmin,38px) clamp(24px,3.8vmin,34px);
+  text-align:center;
+  background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(253,246,234,.98));
+  border:1px solid rgba(185,138,47,.45); border-radius:3px;
+  box-shadow:0 44px 84px -44px rgba(74,45,18,.6), inset 0 1px 0 rgba(255,255,255,.8);
+  opacity:0; transform:translateY(16px) scale(.975);
+  transition:opacity .45s ease, transform .55s cubic-bezier(.22,.75,.2,1);
+}
+.scrim.on .sheet{ opacity:1; transform:none; }
+.sheet::before{                                    /* the second rule of a double border */
+  content:""; position:absolute; inset:6px; pointer-events:none;
+  border:1px solid rgba(185,138,47,.26); border-radius:2px;
+}
+
+/* dismiss ✕ — 44px hit area, 32px visible disc, tucked inside the gold rule */
+.sheet .x{
+  position:absolute; top:8px; right:8px; z-index:2;
+  width:44px; height:44px; display:grid; place-items:center;
+  padding:0; border:0; background:none; color:var(--gold);
+  cursor:pointer; -webkit-tap-highlight-color:transparent;
+  transition:color .2s ease, transform .15s ease;
+}
+.sheet .x::before{
+  content:""; position:absolute; inset:6px; border-radius:50%;
+  background:rgba(185,138,47,.10); transition:background .2s ease, box-shadow .2s ease;
+}
+.sheet .x svg{ position:relative; width:14px; height:14px; }
+.sheet .x:hover{ color:#7d5a12; }
+.sheet .x:hover::before{ background:rgba(185,138,47,.22); }
+.sheet .x:active{ transform:scale(.94); }
+.sheet .x:focus-visible{ outline:none; }
+.sheet .x:focus-visible::before{ box-shadow:0 0 0 2px var(--gold); }
+
+.sheet .eyebrow{
+  margin:0 0 .6em; font-size:clamp(10px, 1vmin + 7px, 12px);
+  letter-spacing:.42em; text-indent:.42em; text-transform:uppercase; color:var(--gold);
+}
+.sheet h2{
+  margin:0 auto; max-width:16ch; font-weight:500; font-style:italic; line-height:1.16;
+  font-size:clamp(22px, 3.2vmin + 12px, 33px); color:#4d3b24;
+}
+.orn{
+  display:flex; align-items:center; gap:.7em;
+  width:70%; margin:1em auto 1.1em; color:var(--gold);
+}
+.orn::before, .orn::after{
+  content:""; flex:1; height:1px;
+  background:linear-gradient(90deg, rgba(185,138,47,0), rgba(185,138,47,.6), rgba(185,138,47,0));
+}
+.orn i{ font-style:normal; font-size:11px; opacity:.85; }
+.sheet p.body{
+  margin:0 auto; max-width:32ch;
+  font-size:clamp(15px, 1.4vmin + 11px, 18px); line-height:1.6; color:var(--ink);
+}
+
+/* what is tappable, spelled out */
+.taps{ list-style:none; margin:1.15em auto .2em; padding:0; width:min(100%, max-content); }
+.taps li{
+  display:flex; align-items:center; gap:.7em; text-align:left;
+  padding:.5em 0; font-size:clamp(14px, 1.2vmin + 10px, 16.5px); color:var(--ink);
+}
+.taps li + li{ border-top:1px solid rgba(185,138,47,.18); }
+.taps svg{ flex:none; width:1.35em; height:1.35em; color:var(--gold); }
+.taps span{ flex:1; }
+.taps em{ font-style:italic; color:#4d3b24; }
+
+.sheet .go{
+  display:block; width:min(100%, 270px); min-height:48px;
+  margin:1.5em auto 0; font:inherit; font-size:13px;
+  letter-spacing:.2em; text-indent:.2em; text-transform:uppercase;
+  color:#fffdf7; background:linear-gradient(180deg, #c9993c, #a9781f);
+  border:0; border-radius:999px; padding:.85em 1.6em .75em; cursor:pointer;
+  box-shadow:0 12px 26px -14px rgba(120,85,20,.95);
+  touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+  transition:filter .25s ease, box-shadow .25s ease, transform .15s ease;
+}
+.sheet .go:hover{ filter:brightness(1.07); box-shadow:0 16px 30px -14px rgba(120,85,20,1); }
+.sheet .go:active{ transform:translateY(1px); }
+.sheet .go:focus-visible{ outline:none; box-shadow:0 0 0 2px #fffdf7, 0 0 0 4px var(--gold); }
+
+/* small phones & landscape slivers */
+@media (max-width: 400px), (max-height: 560px){
+  .sheet{ padding:28px 18px 24px; }
+  .sheet h2{ max-width:20ch; }
+  .orn{ width:82%; margin:.85em auto .95em; }
+  .taps{ width:100%; }
+  .taps li{ padding:.55em 0; }
+  .sheet .go{ width:100%; margin-top:1.25em; }
+}
+/* laid-flat phones: shave the vertical rhythm so the sheet still fits whole */
+@media (max-height: 430px){
+  .scrim{ padding-top:12px; padding-bottom:12px; }
+  .sheet{ padding:20px 18px 18px; }
+  .orn{ margin:.5em auto .6em; }
+  .sheet p.body{ max-width:46ch; }
+  .taps{ margin-top:.75em; }
+  .taps li{ padding:.4em 0; }
+  .sheet .go{ margin-top:1em; min-height:44px; }
+  .chevs{ margin-top:.9em; }
+  .progress{ margin-top:.8em; }
+}
+
 body.clean .status, body.clean .controls{ display:none !important; }
 
 .sr-only{
@@ -308,6 +428,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
   .petals{ display:none; }
   .persp{ animation:none; }
   .status span.pulse{ animation:none; }
+  .sheet{ transition-duration:.15s; transform:none; }
 }
 </style>
 </head>
@@ -376,6 +497,39 @@ body.clean .status, body.clean .controls{ display:none !important; }
 
 <div class="veil" aria-hidden="true"></div>
 
+<!-- on load: the card is interactive -->
+<div class="scrim" id="introScrim" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+  <div class="sheet">
+    <button class="x" type="button" id="introX" aria-label="Close this note">
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+        <path d="M1.6 1.6l10.8 10.8M12.4 1.6L1.6 12.4"/>
+      </svg>
+    </button>
+    <p class="eyebrow">A little note</p>
+    <h2 id="introTitle">The card is interactive</h2>
+    <div class="orn" aria-hidden="true"><i>&#10022;</i></div>
+    <p class="body">Once the gates swing open, parts of the invitation are tappable.</p>
+    <ul class="taps">
+      <li>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3.6c-4.7 0-8.6 3.3-8.6 7.4 0 2.3 1.2 4.4 3.2 5.8l-.9 3.6 3.8-1.9c.8.2 1.6.3 2.5.3 4.7 0 8.6-3.3 8.6-7.4S16.7 3.6 12 3.6Z"/>
+        </svg>
+        <span>The <em>RSVP</em> line opens WhatsApp</span>
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3.4" y="3.4" width="6.6" height="6.6" rx="1"/>
+          <rect x="14" y="3.4" width="6.6" height="6.6" rx="1"/>
+          <rect x="3.4" y="14" width="6.6" height="6.6" rx="1"/>
+          <path d="M14 14h3.2v3.2H14zM20.6 14v.01M20.6 20.6v.01M14 20.6h3.2"/>
+        </svg>
+        <span>Both <em>QR codes</em> open Google Maps</span>
+      </li>
+    </ul>
+    <button class="go" type="button" id="introGo">Got it</button>
+  </div>
+</div>
+
 <div class="status" aria-live="polite"><span id="statusText" class="pulse">Tap to open the card</span></div>
 
 <nav class="controls" aria-label="Invitation controls">
@@ -400,6 +554,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
     autoplay: qs.get('autoplay') === '1',
     loop:     qs.get('loop')     === '1',
     clean:    qs.get('clean')    === '1',
+    intro:    qs.get('intro')    !== '0',   // the "card is interactive" note on load
     petals:   qs.get('petals')   !== '0',
 
     /* true  → crossfade to the flat spread artwork once fully open (exact
@@ -517,9 +672,15 @@ body.clean .status, body.clean .controls{ display:none !important; }
   btnOpen.addEventListener('click', openCard);
   btnClose.addEventListener('click', closeCard);
   addEventListener('keydown', e => {
+    const sheet = document.querySelector('.scrim.on');
     if (e.key === ' ' || e.key === 'Enter'){
+      if (sheet) return;                                   // the sheet's own buttons answer
       if (!isOpen){ e.preventDefault(); openCard(); }
-    } else if (e.key === 'Escape' || e.key.toLowerCase() === 'c'){ closeCard(); }
+    } else if (e.key === 'Escape' || e.key.toLowerCase() === 'c'){
+      if (sheet === introScrim){ closeIntro(); return; }
+      if (sheet) return;                                   // a handoff runs to completion
+      closeCard();
+    }
   });
   const btnMute = $('#btnMute');
   let musicMuted = false;
@@ -530,6 +691,27 @@ body.clean .status, body.clean .controls{ display:none !important; }
     if (musicMuted) fadeBgm(0, 900);                       // ease out over 0.9s
     else if (isOpen || busy) fadeBgm(0.55, 900);           // ease back in
   });
+
+  /* ---------- modals ---------- */
+  const introScrim = $('#introScrim');
+  const anySheet = () => !!document.querySelector('.scrim.on');
+  let lastFocus = null;
+
+  function showSheet(el, focusEl){
+    lastFocus = document.activeElement;
+    el.classList.add('on');
+    if (focusEl) setTimeout(() => focusEl.focus(), 80);
+  }
+  function hideSheet(el){
+    el.classList.remove('on');
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+    lastFocus = null;
+  }
+
+  const closeIntro = () => hideSheet(introScrim);
+  $('#introGo').addEventListener('click', closeIntro);
+  $('#introX').addEventListener('click', closeIntro);
+  introScrim.addEventListener('click', e => { if (e.target === introScrim) closeIntro(); });
 
   /* ---------- pinch / pan / tap / scroll zoom ---------- */
   const zoomer = $('#zoomer');
@@ -563,7 +745,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
   let pinch = null, drag = null;
 
   addEventListener('pointerdown', e => {
-    if (e.target.closest('.controls, a.hotspot')) return;   // let buttons & links behave natively
+    if (e.target.closest('.controls, a.hotspot, .scrim')) return;  // buttons, links & sheets behave natively
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pts.size === 1){
       drag = { x0: e.clientX, y0: e.clientY, t0: performance.now(),
@@ -621,7 +803,7 @@ body.clean .status, body.clean .controls{ display:none !important; }
 
   /* closed → a tap opens the card; open → a tap zooms in / back out */
   function handleTap(x, y){
-    if (busy) return;
+    if (busy || anySheet()) return;
     if (!isOpen){ openCard(); return; }
     if (Z.s > 1.05) resetZoom(true);
     else zoomAt(x, y, CONFIG.tapZoom / Z.s, true);
@@ -674,10 +856,12 @@ body.clean .status, body.clean .controls{ display:none !important; }
     body.classList.add('ready');
     refreshUI();
     if (CONFIG.autoplay) setTimeout(openCard, 900);
+    else if (CONFIG.intro && !CONFIG.clean) setTimeout(() => showSheet(introScrim, $('#introGo')), 700);
   });
 
   /* console / integration API */
-  window.invite = { open: openCard, close: closeCard, resetZoom: () => resetZoom(true) };
+  window.invite = { open: openCard, close: closeCard, resetZoom: () => resetZoom(true),
+                    note: () => showSheet(introScrim, $('#introGo')) };
 })();
 </script>
 </body>
